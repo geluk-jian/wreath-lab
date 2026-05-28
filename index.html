@@ -78,20 +78,26 @@
     }
     #palette {
       flex: 1; overflow-y: auto;
-      padding: 5px;
-      display: grid; grid-template-columns: 1fr 1fr; gap: 4px;
-      align-content: start;
+      padding: 4px 5px 10px;
       scrollbar-width: thin; scrollbar-color: var(--border) transparent;
+    }
+    .cat-sec { margin-bottom: 2px; }
+    .cat-lbl {
+      font-size: 9px; font-weight: 700; letter-spacing: 1.4px;
+      text-transform: uppercase; color: var(--txt-lt);
+      padding: 8px 5px 4px;
+    }
+    .cat-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 3px;
     }
     .fi {
       cursor: pointer;
       border-radius: 7px;
       border: 2px solid transparent;
-      aspect-ratio: 1;
+      height: 80px;
       overflow: hidden;
       transition: border-color .15s;
       background: var(--ivory);
-      position: relative;
     }
     .fi:hover { border-color: var(--orange); }
     .fi:active { transform: scale(.96); }
@@ -100,7 +106,7 @@
       object-fit: contain;
       display: block;
       pointer-events: none;
-      padding: 3px;
+      padding: 4px;
     }
 
     /* ── Center ── */
@@ -352,47 +358,48 @@
 <script>
 'use strict';
 
-/* ── Flower data — grouped by type ───────────────────── */
-const FLOWERS = [
-  // 장미류
-  { name: '핑크 장미',           src: 'flower image/pink rose.png' },
-  { name: '보라 장미',           src: 'flower image/purple rose.png' },
-  { name: '노랑 장미',           src: 'flower image/yellow rose.png' },
-  { name: '빨간 장미',           src: 'flower image/red rose.png' },
-  { name: '살몬 장미',           src: 'flower image/salmon rose.png' },
-  { name: '화이트 장미',         src: 'flower image/white rose.png' },
-  { name: '솔라로즈 바이올렛',   src: 'flower image/solarose violet.png' },
-  { name: '솔라로즈 시나몬핑크', src: 'flower image/solarose cinnamon pink.png' },
-  { name: '솔라로즈 오렌지',     src: 'flower image/solarose orange.png' },
-  { name: '솔라로즈 아이보리',   src: 'flower image/solarose ivory.png' },
-  // 수국류
-  { name: '수국',                src: 'flower image/hydrangea.png' },
-  { name: '핑크 수국',           src: 'flower image/pink hydrangea.png' },
-  { name: '살몬 수국',           src: 'flower image/salmon hydrangea.png' },
-  { name: '노랑 수국',           src: 'flower image/yellow hydrangea.png' },
-  { name: '보라 수국',           src: 'flower image/purple hydrangea.png' },
-  { name: '그린 수국',           src: 'flower image/green hydrangea.png' },
-  { name: '화이트 수국',         src: 'flower image/white hydrangea.png' },
-  { name: '민트 수국',           src: 'flower image/mint hycrangea.png' },
-  { name: '스카이블루 수국',     src: 'flower image/skyblue hydrangea.png' },
-  { name: '실크핑크 수국',       src: 'flower image/silkpink hydrangea.png' },
-  // 기타 꽃류
-  { name: '라벤더',              src: 'flower image/lavender.png' },
-  { name: '안스리움',            src: 'flower image/anthurium.png' },
-  { name: '안스리움 3종',        src: 'flower image/anthurium three.png' },
-  { name: '코랄 카네이션',       src: 'flower image/coral carnation.png' },
-  { name: '핑크 쁘띠',          src: 'flower image/pink petit.png' },
-  { name: '벌룬 플랜트',         src: 'flower image/Balloon plant.png' },
-  // 그린·잎류
-  { name: '포플러스',            src: 'flower image/populus.png' },
-  { name: '포플러스 2잎',        src: 'flower image/populus 2leafs.png' },
-  { name: '그린 팔라리스',       src: 'flower image/green phalaris.png' },
-  { name: '내추럴 팔라리스',     src: 'flower image/natural phalaris.png' },
-  // 포인트 소재
-  { name: '골든볼',              src: 'flower image/goldenball.png' },
-  { name: '마젠타 라구루스',     src: 'flower image/magenta lagurus.png' },
-  { name: '파인콘',              src: 'flower image/fine cone.png' },
-  { name: '파인콘 2',            src: 'flower image/fine cone2.png' },
+/* ── Flower data — grouped by category ───────────────── */
+const GROUPS = [
+  { label: '장미', items: [
+    { name: '핑크 장미',           src: 'flower image/pink rose.png' },
+    { name: '보라 장미',           src: 'flower image/purple rose.png' },
+    { name: '노랑 장미',           src: 'flower image/yellow rose.png' },
+    { name: '빨간 장미',           src: 'flower image/red rose.png' },
+    { name: '살몬 장미',           src: 'flower image/salmon rose.png' },
+    { name: '화이트 장미',         src: 'flower image/white rose.png' },
+    { name: '솔라로즈 바이올렛',   src: 'flower image/solarose violet.png' },
+    { name: '솔라로즈 시나몬핑크', src: 'flower image/solarose cinnamon pink.png' },
+    { name: '솔라로즈 오렌지',     src: 'flower image/solarose orange.png' },
+    { name: '솔라로즈 아이보리',   src: 'flower image/solarose ivory.png' },
+  ]},
+  { label: '수국', items: [
+    { name: '수국',                src: 'flower image/hydrangea.png' },
+    { name: '핑크 수국',           src: 'flower image/pink hydrangea.png' },
+    { name: '살몬 수국',           src: 'flower image/salmon hydrangea.png' },
+    { name: '노랑 수국',           src: 'flower image/yellow hydrangea.png' },
+    { name: '보라 수국',           src: 'flower image/purple hydrangea.png' },
+    { name: '그린 수국',           src: 'flower image/green hydrangea.png' },
+    { name: '화이트 수국',         src: 'flower image/white hydrangea.png' },
+    { name: '민트 수국',           src: 'flower image/mint hycrangea.png' },
+    { name: '스카이블루 수국',     src: 'flower image/skyblue hydrangea.png' },
+    { name: '실크핑크 수국',       src: 'flower image/silkpink hydrangea.png' },
+  ]},
+  { label: '소재', items: [
+    { name: '라벤더',              src: 'flower image/lavender.png' },
+    { name: '안스리움',            src: 'flower image/anthurium.png' },
+    { name: '안스리움 3종',        src: 'flower image/anthurium three.png' },
+    { name: '코랄 카네이션',       src: 'flower image/coral carnation.png' },
+    { name: '핑크 쁘띠',          src: 'flower image/pink petit.png' },
+    { name: '벌룬 플랜트',         src: 'flower image/Balloon plant.png' },
+    { name: '포플러스',            src: 'flower image/populus.png' },
+    { name: '포플러스 2잎',        src: 'flower image/populus 2leafs.png' },
+    { name: '그린 팔라리스',       src: 'flower image/green phalaris.png' },
+    { name: '내추럴 팔라리스',     src: 'flower image/natural phalaris.png' },
+    { name: '골든볼',              src: 'flower image/goldenball.png' },
+    { name: '마젠타 라구루스',     src: 'flower image/magenta lagurus.png' },
+    { name: '파인콘',              src: 'flower image/fine cone.png' },
+    { name: '파인콘 2',            src: 'flower image/fine cone2.png' },
+  ]},
 ];
 
 const BG_COLORS = [
@@ -417,17 +424,29 @@ let sel     = null;
 let zTop    = 10;
 let canvasBg = null; // null = transparent
 
-/* ── Build palette (no text labels) ─────────────────── */
+/* ── Build palette (category groups) ────────────────── */
 const pal = document.getElementById('palette');
-FLOWERS.forEach(f => {
-  const d = document.createElement('div');
-  d.className = 'fi';
-  d.title = f.name;
-  const img = document.createElement('img');
-  img.src = f.src; img.alt = f.name; img.loading = 'lazy';
-  d.appendChild(img);
-  d.addEventListener('click', () => addFlower(f.src, f.name));
-  pal.appendChild(d);
+GROUPS.forEach(group => {
+  const sec = document.createElement('div');
+  sec.className = 'cat-sec';
+  const lbl = document.createElement('div');
+  lbl.className = 'cat-lbl';
+  lbl.textContent = group.label;
+  sec.appendChild(lbl);
+  const grid = document.createElement('div');
+  grid.className = 'cat-grid';
+  group.items.forEach(f => {
+    const d = document.createElement('div');
+    d.className = 'fi';
+    d.title = f.name;
+    const img = document.createElement('img');
+    img.src = f.src; img.alt = f.name; img.loading = 'lazy';
+    d.appendChild(img);
+    d.addEventListener('click', () => addFlower(f.src, f.name));
+    grid.appendChild(d);
+  });
+  sec.appendChild(grid);
+  pal.appendChild(sec);
 });
 
 /* ── Build BG swatches ───────────────────────────────── */
