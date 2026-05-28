@@ -18,6 +18,7 @@
       --txt:     #2d2420;
       --txt-mid: #6a5a4a;
       --txt-lt:  #a09080;
+      --gold:    #c9993e;
     }
 
     body {
@@ -41,7 +42,7 @@
       gap: 10px;
       flex-shrink: 0;
     }
-    .logo { font-family: 'Noto Serif KR', serif; font-size: 17px; font-weight: 700; color: var(--accent); }
+    .logo    { font-family: 'Noto Serif KR', serif; font-size: 17px; font-weight: 700; color: var(--accent); }
     .tagline { font-size: 12px; color: var(--txt-lt); font-weight: 300; }
 
     /* ── Layout ── */
@@ -58,46 +59,43 @@
     }
     .ph {
       padding: 11px 13px 9px;
-      font-size: 10px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 1px;
+      font-size: 10px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 1px;
       color: var(--txt-lt);
       border-bottom: 1px solid #f0ebe3;
       flex-shrink: 0;
     }
     #palette {
-      flex: 1;
-      overflow-y: auto;
-      padding: 8px;
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 6px;
+      flex: 1; overflow-y: auto; padding: 8px;
+      display: grid; grid-template-columns: 1fr 1fr; gap: 6px;
       align-content: start;
     }
     .fi {
-      cursor: pointer;
-      border-radius: 8px;
-      border: 2px solid transparent;
-      padding: 5px;
+      cursor: pointer; border-radius: 8px;
+      border: 2px solid transparent; padding: 5px;
       text-align: center;
       transition: border-color .15s, background .15s;
       background: var(--bg);
     }
-    .fi:hover { border-color: #c9b89f; background: #f5ede2; }
+    .fi:hover  { border-color: #c9b89f; background: #f5ede2; }
     .fi:active { transform: scale(.97); }
-    .fi img { width: 100%; aspect-ratio: 1; object-fit: contain; display: block; pointer-events: none; }
+    .fi img  { width: 100%; aspect-ratio: 1; object-fit: contain; display: block; pointer-events: none; }
     .fi span { display: block; font-size: 9.5px; color: var(--txt-mid); margin-top: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
     /* ── Center ── */
     #center {
       flex: 1;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      display: flex; align-items: center; justify-content: center;
       background: linear-gradient(135deg, #ede8e0 0%, #d9cfc4 100%);
       overflow: hidden;
     }
+
+    /* Wrapper holds canvas + handles layer together */
+    #canvas-wrap {
+      position: relative;
+      flex-shrink: 0;
+    }
+
     #canvas {
       position: relative;
       width: min(560px, calc(100vw - 166px - 214px - 32px), calc(100vh - 50px - 32px));
@@ -106,7 +104,7 @@
       border-radius: 16px;
       box-shadow: 0 12px 48px rgba(80,60,40,.22);
       overflow: hidden;
-      flex-shrink: 0;
+      display: block;
     }
     #wreath-base {
       position: absolute;
@@ -114,10 +112,53 @@
       transform: translate(-50%, -50%);
       width: 92%; height: 92%;
       object-fit: contain;
-      pointer-events: none;
-      user-select: none;
+      pointer-events: none; user-select: none;
       z-index: 1;
     }
+
+    /* ── Handles layer (sits on top of canvas, not clipped) ── */
+    #hl {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      pointer-events: none;   /* pass clicks through by default */
+      z-index: 100;
+      overflow: visible;
+      border-radius: 16px;
+    }
+
+    /* Handle dots */
+    .hdl {
+      position: absolute;
+      pointer-events: all;        /* individual handles are clickable */
+      transform: translate(-50%, -50%);
+    }
+    .hdl-res {
+      width: 13px; height: 13px;
+      border-radius: 50%;
+      background: #fff;
+      border: 2.5px solid var(--gold);
+      box-shadow: 0 1px 5px rgba(0,0,0,.25);
+      cursor: pointer;
+      transition: transform .1s, background .1s;
+    }
+    .hdl-res:hover {
+      transform: translate(-50%, -50%) scale(1.3);
+      background: #fff8ee;
+    }
+    .hdl-rot {
+      width: 24px; height: 24px;
+      border-radius: 50%;
+      background: var(--gold);
+      color: #fff;
+      font-size: 14px; line-height: 24px; text-align: center;
+      cursor: grab;
+      box-shadow: 0 2px 8px rgba(0,0,0,.28);
+      transition: transform .1s, background .1s;
+      user-select: none;
+    }
+    .hdl-rot:hover  { transform: translate(-50%, -50%) scale(1.18); background: #b8893e; }
+    .hdl-rot:active { cursor: grabbing; }
 
     /* ── Canvas elements ── */
     .cel {
@@ -129,14 +170,6 @@
       touch-action: none;
     }
     .cel:active { cursor: grabbing; }
-    .cel.sel::after {
-      content: '';
-      position: absolute;
-      inset: -4px;
-      border: 2px dashed #c9993e;
-      border-radius: 4px;
-      pointer-events: none;
-    }
     .cel.flower img { width: 100%; height: 100%; object-fit: contain; display: block; pointer-events: none; }
     .cel.txt { white-space: pre; line-height: 1.25; }
 
@@ -145,51 +178,41 @@
       width: 214px;
       background: var(--panel);
       border-left: 1px solid var(--border);
-      display: flex;
-      flex-direction: column;
-      overflow-y: auto;
-      flex-shrink: 0;
+      display: flex; flex-direction: column;
+      overflow-y: auto; flex-shrink: 0;
     }
     .sec { padding: 13px 14px; border-bottom: 1px solid #f0ebe3; }
-    .st {
-      font-size: 10px; font-weight: 700;
-      text-transform: uppercase; letter-spacing: 1px;
-      color: var(--txt-lt); margin-bottom: 11px;
-    }
+    .st  { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--txt-lt); margin-bottom: 11px; }
 
-    /* sliders */
-    .cr { margin-bottom: 9px; }
-    .cl { display: flex; justify-content: space-between; font-size: 11.5px; color: var(--txt-mid); margin-bottom: 4px; }
-    .cv { font-weight: 700; color: var(--accent); }
+    .cr  { margin-bottom: 9px; }
+    .cl  { display: flex; justify-content: space-between; font-size: 11.5px; color: var(--txt-mid); margin-bottom: 4px; }
+    .cv  { font-weight: 700; color: var(--accent); }
     input[type=range] { width: 100%; accent-color: var(--accent); cursor: pointer; }
 
-    #no-sel { font-size: 11.5px; color: var(--txt-lt); text-align: center; padding: 2px 0 4px; }
-    #sel-ctrls { display: none; }
+    #no-sel   { font-size: 11.5px; color: var(--txt-lt); text-align: center; padding: 2px 0 4px; }
+    #sel-ctrls{ display: none; }
 
-    /* bg swatches */
     .sg { display: grid; grid-template-columns: repeat(6,1fr); gap: 5px; margin-bottom: 9px; }
     .sw {
       width: 100%; aspect-ratio: 1; border-radius: 50%;
       cursor: pointer; border: 2px solid transparent; transition: transform .1s;
     }
     .sw:hover { transform: scale(1.18); }
-    .sw.act { border-color: var(--accent); }
-    .cr-row { display: flex; align-items: center; gap: 8px; }
+    .sw.act   { border-color: var(--accent); }
+    .cr-row   { display: flex; align-items: center; gap: 8px; }
     .cr-row label { font-size: 11.5px; color: var(--txt-mid); }
     input[type=color] { width: 30px; height: 26px; border: 1px solid var(--border); border-radius: 5px; cursor: pointer; padding: 2px; }
 
-    /* text tool */
     #txt-in {
       width: 100%; padding: 7px 10px;
       border: 1px solid var(--border); border-radius: 7px;
-      font-size: 13px; outline: none; color: var(--txt); margin-bottom: 7px;
-      font-family: inherit;
+      font-size: 13px; outline: none; color: var(--txt);
+      margin-bottom: 7px; font-family: inherit;
     }
     #txt-in:focus { border-color: var(--accent); }
     .r2 { display: flex; gap: 7px; margin-bottom: 7px; align-items: center; }
     #fnt-sel { flex: 1; padding: 5px 6px; border: 1px solid var(--border); border-radius: 6px; font-size: 11.5px; background: #fff; color: var(--txt); }
 
-    /* buttons */
     .btn {
       width: 100%; padding: 8px 12px;
       border: none; border-radius: 8px;
@@ -228,8 +251,12 @@
   </aside>
 
   <div id="center">
-    <div id="canvas">
-      <img id="wreath-base" src="flower image/Wreath.png" alt="리스 틀">
+    <div id="canvas-wrap">
+      <div id="canvas">
+        <img id="wreath-base" src="flower image/Wreath.png" alt="리스 틀">
+      </div>
+      <!-- Handles layer: siblings with canvas so it's not clipped by canvas overflow:hidden -->
+      <div id="hl"></div>
     </div>
   </div>
 
@@ -292,8 +319,8 @@
       <div class="tips">
         ① 왼쪽 꽃 소재 클릭<br>
         ② 캔버스에서 드래그로 배치<br>
-        ③ 소재 클릭 → 크기·회전 조정<br>
-        ④ 레터링 텍스트 추가 후 배치<br>
+        ③ 소재 클릭 → 모서리 핸들로 크기 조절<br>
+        ④ ↻ 핸들 드래그로 회전<br>
         ⑤ PNG 저장 (워터마크 포함)
       </div>
     </div>
@@ -346,14 +373,15 @@ const BG_COLORS = [
   '#3d3535','#1a1a2e','#2c3e2d','#3e2c1a',
 ];
 
-/* ── DOM ─────────────────────────────────────────────── */
-const canvas  = document.getElementById('canvas');
-const noSel   = document.getElementById('no-sel');
-const selCtrls= document.getElementById('sel-ctrls');
-const szSl    = document.getElementById('sz-sl');
-const szVal   = document.getElementById('sz-val');
-const rotSl   = document.getElementById('rot-sl');
-const rotVal  = document.getElementById('rot-val');
+/* ── DOM refs ────────────────────────────────────────── */
+const canvas   = document.getElementById('canvas');
+const hl       = document.getElementById('hl');
+const noSel    = document.getElementById('no-sel');
+const selCtrls = document.getElementById('sel-ctrls');
+const szSl     = document.getElementById('sz-sl');
+const szVal    = document.getElementById('sz-val');
+const rotSl    = document.getElementById('rot-sl');
+const rotVal   = document.getElementById('rot-val');
 
 /* ── State ───────────────────────────────────────────── */
 let sel  = null;
@@ -375,7 +403,7 @@ const swGrid = document.getElementById('sw-grid');
 BG_COLORS.forEach((c, i) => {
   const s = document.createElement('div');
   s.className = 'sw' + (i === 0 ? ' act' : '');
-  s.style.cssText = `background:${c};${c==='#ffffff'?'border-color:#ddd;':''}`;
+  s.style.cssText = `background:${c};${c === '#ffffff' ? 'border-color:#ddd;' : ''}`;
   s.title = c;
   s.addEventListener('click', () => {
     document.querySelectorAll('.sw').forEach(x => x.classList.remove('act'));
@@ -397,8 +425,8 @@ function addFlower(src, name) {
   const el   = document.createElement('div');
   el.className = 'cel flower';
   el.style.cssText = `
-    left:${canvas.offsetWidth  / 2 - BASE/2 + jit()}px;
-    top: ${canvas.offsetHeight / 2 - BASE/2 + jit()}px;
+    left:${canvas.offsetWidth  / 2 - BASE / 2 + jit()}px;
+    top: ${canvas.offsetHeight / 2 - BASE / 2 + jit()}px;
     width:${BASE}px; height:${BASE}px;
   `;
   el.dataset.base   = BASE;
@@ -439,22 +467,183 @@ document.getElementById('add-txt-btn').addEventListener('click', () => {
   pick(el);
 });
 
-document.getElementById('tsz-sl').addEventListener('input', function() {
+document.getElementById('tsz-sl').addEventListener('input', function () {
   document.getElementById('tsz-val').textContent = this.value + 'px';
 });
+
+/* ── Get element geometry ────────────────────────────── */
+// Returns element center in canvas coords + size + rotation in radians
+function getElInfo(el) {
+  const left = parseFloat(el.style.left) || 0;
+  const top  = parseFloat(el.style.top)  || 0;
+  const w    = el.offsetWidth;
+  const h    = el.offsetHeight;
+  const rot  = (parseFloat(el.dataset.rotate) || 0) * Math.PI / 180;
+  return { left, top, w, h, cx: left + w / 2, cy: top + h / 2, rot };
+}
+
+/* ── Draw handles on the overlay layer ───────────────── */
+function updateHandles() {
+  hl.innerHTML = '';
+  if (!sel) return;
+
+  const { w, h, cx, cy, rot } = getElInfo(sel);
+  if (!w || !h) return;
+
+  const cosR = Math.cos(rot);
+  const sinR = Math.sin(rot);
+
+  // Convert element-local coords to canvas-layer coords
+  function P(lx, ly) {
+    return { x: cx + lx * cosR - ly * sinR, y: cy + lx * sinR + ly * cosR };
+  }
+
+  /* ─ SVG: dashed selection border + line to rotation handle ─ */
+  const ns  = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(ns, 'svg');
+  svg.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;overflow:visible;';
+
+  // Dashed rectangle (4 corners in rotated space)
+  const corners = [P(-w/2,-h/2), P(w/2,-h/2), P(w/2,h/2), P(-w/2,h/2)];
+  const poly = document.createElementNS(ns, 'polygon');
+  poly.setAttribute('points', corners.map(p => `${p.x},${p.y}`).join(' '));
+  poly.setAttribute('fill', 'none');
+  poly.setAttribute('stroke', '#c9993e');
+  poly.setAttribute('stroke-width', '1.5');
+  poly.setAttribute('stroke-dasharray', '6 3');
+  svg.appendChild(poly);
+
+  // Line from top-center to rotation handle
+  const ROT_DIST = 32;   // px distance above the top edge
+  const tc = P(0, -h / 2);
+  const rp = P(0, -h / 2 - ROT_DIST);
+  const ln = document.createElementNS(ns, 'line');
+  ln.setAttribute('x1', tc.x); ln.setAttribute('y1', tc.y);
+  ln.setAttribute('x2', rp.x); ln.setAttribute('y2', rp.y);
+  ln.setAttribute('stroke', '#c9993e');
+  ln.setAttribute('stroke-width', '1.5');
+  svg.appendChild(ln);
+
+  hl.appendChild(svg);
+
+  /* ─ 4 corner resize handles ─ */
+  [[-w/2,-h/2], [w/2,-h/2], [w/2,h/2], [-w/2,h/2]].forEach(([lx, ly]) => {
+    const p  = P(lx, ly);
+    const hd = document.createElement('div');
+    hd.className  = 'hdl hdl-res';
+    hd.style.left = p.x + 'px';
+    hd.style.top  = p.y + 'px';
+    hd.title = '드래그하여 크기 조절';
+    hd.addEventListener('mousedown', e => { e.stopPropagation(); resizeStart(e.clientX, e.clientY, sel, 'mouse'); });
+    hd.addEventListener('touchstart', e => {
+      e.preventDefault(); e.stopPropagation();
+      resizeStart(e.touches[0].clientX, e.touches[0].clientY, sel, 'touch');
+    }, { passive: false });
+    hl.appendChild(hd);
+  });
+
+  /* ─ Rotation handle ─ */
+  const rh  = document.createElement('div');
+  rh.className  = 'hdl hdl-rot';
+  rh.title = '드래그하여 회전';
+  rh.textContent = '↻';
+  rh.style.left = rp.x + 'px';
+  rh.style.top  = rp.y + 'px';
+  rh.addEventListener('mousedown', e => { e.stopPropagation(); rotateStart(e.clientX, e.clientY, sel, 'mouse'); });
+  rh.addEventListener('touchstart', e => {
+    e.preventDefault(); e.stopPropagation();
+    rotateStart(e.touches[0].clientX, e.touches[0].clientY, sel, 'touch');
+  }, { passive: false });
+  hl.appendChild(rh);
+}
+
+/* ── Resize from corner handle ───────────────────────── */
+function resizeStart(startX, startY, el, inputType) {
+  const cRect   = canvas.getBoundingClientRect();
+  const { cx: cx0, cy: cy0 } = getElInfo(el);
+  const isFlower = el.classList.contains('flower');
+  const initSize = isFlower ? el.offsetWidth : (parseFloat(el.style.fontSize) || parseFloat(el.dataset.base));
+
+  const sx = startX - cRect.left;
+  const sy = startY - cRect.top;
+  const initDist = Math.hypot(sx - cx0, sy - cy0);
+  if (initDist < 1) return;
+
+  function step(clientX, clientY) {
+    const mx = clientX - cRect.left;
+    const my = clientY - cRect.top;
+    const newSize = Math.max(20, initSize * Math.hypot(mx - cx0, my - cy0) / initDist);
+
+    if (isFlower) {
+      // Keep center fixed as element grows/shrinks
+      el.style.left   = (cx0 - newSize / 2) + 'px';
+      el.style.top    = (cy0 - newSize / 2) + 'px';
+      el.style.width  = newSize + 'px';
+      el.style.height = newSize + 'px';
+    } else {
+      el.style.fontSize = newSize + 'px';
+    }
+    el.dataset.scale = Math.round(newSize / parseFloat(el.dataset.base) * 100);
+    szSl.value = Math.min(300, Math.max(10, +el.dataset.scale));
+    szVal.textContent = el.dataset.scale + '%';
+    updateHandles();
+  }
+
+  if (inputType === 'mouse') {
+    const onMM = e => step(e.clientX, e.clientY);
+    const onMU = () => { document.removeEventListener('mousemove', onMM); document.removeEventListener('mouseup', onMU); };
+    document.addEventListener('mousemove', onMM);
+    document.addEventListener('mouseup', onMU);
+  } else {
+    const onTM = e => { e.preventDefault(); step(e.touches[0].clientX, e.touches[0].clientY); };
+    const onTE = () => { document.removeEventListener('touchmove', onTM); document.removeEventListener('touchend', onTE); };
+    document.addEventListener('touchmove', onTM, { passive: false });
+    document.addEventListener('touchend', onTE);
+  }
+}
+
+/* ── Rotate from rotation handle ─────────────────────── */
+function rotateStart(startX, startY, el, inputType) {
+  const cRect = canvas.getBoundingClientRect();
+  const { cx, cy } = getElInfo(el);
+  const startAngle = Math.atan2(startY - cRect.top - cy, startX - cRect.left - cx) * 180 / Math.PI;
+  const initRot    = parseFloat(el.dataset.rotate) || 0;
+
+  function step(clientX, clientY) {
+    const angle  = Math.atan2(clientY - cRect.top - cy, clientX - cRect.left - cx) * 180 / Math.PI;
+    const newRot = ((initRot + angle - startAngle) % 360 + 360) % 360;
+    el.dataset.rotate      = Math.round(newRot);
+    el.style.transform     = `rotate(${newRot}deg)`;
+    rotSl.value            = Math.round(newRot);
+    rotVal.textContent     = Math.round(newRot) + '°';
+    updateHandles();
+  }
+
+  if (inputType === 'mouse') {
+    const onMM = e => step(e.clientX, e.clientY);
+    const onMU = () => { document.removeEventListener('mousemove', onMM); document.removeEventListener('mouseup', onMU); };
+    document.addEventListener('mousemove', onMM);
+    document.addEventListener('mouseup', onMU);
+  } else {
+    const onTM = e => { e.preventDefault(); step(e.touches[0].clientX, e.touches[0].clientY); };
+    const onTE = () => { document.removeEventListener('touchmove', onTM); document.removeEventListener('touchend', onTE); };
+    document.addEventListener('touchmove', onTM, { passive: false });
+    document.addEventListener('touchend', onTE);
+  }
+}
 
 /* ── Drag (mouse + touch) ────────────────────────────── */
 function attach(el) {
   function startDrag(cx, cy) {
     pick(el);
-    const x0 = cx, y0 = cy;
     const l0 = parseFloat(el.style.left) || 0;
     const t0 = parseFloat(el.style.top)  || 0;
-    return { x0, y0, l0, t0 };
+    return { cx, cy, l0, t0 };
   }
-  function moveDrag(state, cx, cy) {
-    el.style.left = state.l0 + (cx - state.x0) + 'px';
-    el.style.top  = state.t0 + (cy - state.y0) + 'px';
+  function moveDrag(st, cx, cy) {
+    el.style.left = st.l0 + (cx - st.cx) + 'px';
+    el.style.top  = st.t0 + (cy - st.cy) + 'px';
+    updateHandles();
   }
 
   // Mouse
@@ -481,51 +670,62 @@ function attach(el) {
 
 /* ── Select / deselect ───────────────────────────────── */
 function pick(el) {
-  if (sel) sel.classList.remove('sel');
+  if (sel && sel !== el) sel.classList.remove('sel');
   sel = el;
   el.classList.add('sel');
   el.style.zIndex = ++zTop;
   noSel.style.display    = 'none';
   selCtrls.style.display = 'block';
-  szSl.value  = el.dataset.scale;
+  szSl.value  = Math.min(300, Math.max(10, +el.dataset.scale));
   rotSl.value = el.dataset.rotate;
   szVal.textContent  = el.dataset.scale + '%';
   rotVal.textContent = el.dataset.rotate + '°';
+  updateHandles();
 }
 
 function deselect() {
   if (sel) { sel.classList.remove('sel'); sel = null; }
   noSel.style.display    = 'block';
   selCtrls.style.display = 'none';
+  hl.innerHTML = '';
 }
 
 canvas.addEventListener('mousedown', e => {
   if (e.target === canvas || e.target.id === 'wreath-base') deselect();
 });
 
-/* ── Apply transform ─────────────────────────────────── */
+/* ── Slider controls (right panel) ──────────────────── */
 function applyTransform(el) {
   const s = el.dataset.scale / 100;
   const b = parseFloat(el.dataset.base);
   const r = el.dataset.rotate;
+
   if (el.classList.contains('flower')) {
-    const sz = b * s;
+    const sz   = b * s;
+    const oldW = el.offsetWidth;
+    const oldH = el.offsetHeight;
+    const left = parseFloat(el.style.left) || 0;
+    const top  = parseFloat(el.style.top)  || 0;
+    // Keep center fixed when slider changes size
+    el.style.left   = (left + oldW / 2 - sz / 2) + 'px';
+    el.style.top    = (top  + oldH / 2 - sz / 2) + 'px';
     el.style.width  = sz + 'px';
     el.style.height = sz + 'px';
   } else {
     el.style.fontSize = (b * s) + 'px';
   }
   el.style.transform = `rotate(${r}deg)`;
+  updateHandles();
 }
 
-szSl.addEventListener('input', function() {
+szSl.addEventListener('input', function () {
   if (!sel) return;
   sel.dataset.scale = this.value;
   szVal.textContent = this.value + '%';
   applyTransform(sel);
 });
 
-rotSl.addEventListener('input', function() {
+rotSl.addEventListener('input', function () {
   if (!sel) return;
   sel.dataset.rotate = this.value;
   rotVal.textContent = this.value + '°';
@@ -552,7 +752,7 @@ document.getElementById('save-btn').addEventListener('click', async () => {
   btn.textContent = '캡처 중…';
   btn.disabled = true;
   const prevSel = sel;
-  deselect();
+  deselect();   // hide handles before capture
 
   try {
     const rendered = await html2canvas(canvas, {
@@ -560,6 +760,7 @@ document.getElementById('save-btn').addEventListener('click', async () => {
       scale: 2, backgroundColor: null, logging: false,
     });
 
+    // Watermark
     const ctx = rendered.getContext('2d');
     const w = rendered.width, h = rendered.height;
     const fs = Math.round(w * 0.025);
