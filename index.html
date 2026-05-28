@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Wreath Lab – 레터링 플라워 리스</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;700&family=Noto+Sans+KR:wght@300;400;700&family=Gowun+Dodum&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:      #f7f4f0;
+      --panel:   #ffffff;
+      --border:  #e5ddd3;
+      --accent:  #7c6352;
+      --accent2: #5a4535;
+      --txt:     #2d2420;
+      --txt-mid: #6a5a4a;
+      --txt-lt:  #a09080;
+    }
+
+    body {
+      font-family: 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
+      background: var(--bg);
+      color: var(--txt);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* ── Header ── */
+    #hdr {
+      height: 50px;
+      background: var(--panel);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      padding: 0 18px;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+    .logo { font-family: 'Noto Serif KR', serif; font-size: 17px; font-weight: 700; color: var(--accent); }
+    .tagline { font-size: 12px; color: var(--txt-lt); font-weight: 300; }
+
+    /* ── Layout ── */
+    #main { display: flex; flex: 1; overflow: hidden; }
+
+    /* ── Left panel ── */
+    #left {
+      width: 166px;
+      background: var(--panel);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+    }
+    .ph {
+      padding: 11px 13px 9px;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--txt-lt);
+      border-bottom: 1px solid #f0ebe3;
+      flex-shrink: 0;
+    }
+    #palette {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+      align-content: start;
+    }
+    .fi {
+      cursor: pointer;
+      border-radius: 8px;
+      border: 2px solid transparent;
+      padding: 5px;
+      text-align: center;
+      transition: border-color .15s, background .15s;
+      background: var(--bg);
+    }
+    .fi:hover { border-color: #c9b89f; background: #f5ede2; }
+    .fi:active { transform: scale(.97); }
+    .fi img { width: 100%; aspect-ratio: 1; object-fit: contain; display: block; pointer-events: none; }
+    .fi span { display: block; font-size: 9.5px; color: var(--txt-mid); margin-top: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    /* ── Center ── */
+    #center {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #ede8e0 0%, #d9cfc4 100%);
+      overflow: hidden;
+    }
+    #canvas {
+      position: relative;
+      width: min(560px, calc(100vw - 166px - 214px - 32px), calc(100vh - 50px - 32px));
+      aspect-ratio: 1;
+      background: #ffffff;
+      border-radius: 16px;
+      box-shadow: 0 12px 48px rgba(80,60,40,.22);
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+    #wreath-base {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      width: 92%; height: 92%;
+      object-fit: contain;
+      pointer-events: none;
+      user-select: none;
+      z-index: 1;
+    }
+
+    /* ── Canvas elements ── */
+    .cel {
+      position: absolute;
+      cursor: grab;
+      user-select: none;
+      z-index: 2;
+      transform-origin: center center;
+      touch-action: none;
+    }
+    .cel:active { cursor: grabbing; }
+    .cel.sel::after {
+      content: '';
+      position: absolute;
+      inset: -4px;
+      border: 2px dashed #c9993e;
+      border-radius: 4px;
+      pointer-events: none;
+    }
+    .cel.flower img { width: 100%; height: 100%; object-fit: contain; display: block; pointer-events: none; }
+    .cel.txt { white-space: pre; line-height: 1.25; }
+
+    /* ── Right panel ── */
+    #right {
+      width: 214px;
+      background: var(--panel);
+      border-left: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+      flex-shrink: 0;
+    }
+    .sec { padding: 13px 14px; border-bottom: 1px solid #f0ebe3; }
+    .st {
+      font-size: 10px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 1px;
+      color: var(--txt-lt); margin-bottom: 11px;
+    }
+
+    /* sliders */
+    .cr { margin-bottom: 9px; }
+    .cl { display: flex; justify-content: space-between; font-size: 11.5px; color: var(--txt-mid); margin-bottom: 4px; }
+    .cv { font-weight: 700; color: var(--accent); }
+    input[type=range] { width: 100%; accent-color: var(--accent); cursor: pointer; }
+
+    #no-sel { font-size: 11.5px; color: var(--txt-lt); text-align: center; padding: 2px 0 4px; }
+    #sel-ctrls { display: none; }
+
+    /* bg swatches */
+    .sg { display: grid; grid-template-columns: repeat(6,1fr); gap: 5px; margin-bottom: 9px; }
+    .sw {
+      width: 100%; aspect-ratio: 1; border-radius: 50%;
+      cursor: pointer; border: 2px solid transparent; transition: transform .1s;
+    }
+    .sw:hover { transform: scale(1.18); }
+    .sw.act { border-color: var(--accent); }
+    .cr-row { display: flex; align-items: center; gap: 8px; }
+    .cr-row label { font-size: 11.5px; color: var(--txt-mid); }
+    input[type=color] { width: 30px; height: 26px; border: 1px solid var(--border); border-radius: 5px; cursor: pointer; padding: 2px; }
+
+    /* text tool */
+    #txt-in {
+      width: 100%; padding: 7px 10px;
+      border: 1px solid var(--border); border-radius: 7px;
+      font-size: 13px; outline: none; color: var(--txt); margin-bottom: 7px;
+      font-family: inherit;
+    }
+    #txt-in:focus { border-color: var(--accent); }
+    .r2 { display: flex; gap: 7px; margin-bottom: 7px; align-items: center; }
+    #fnt-sel { flex: 1; padding: 5px 6px; border: 1px solid var(--border); border-radius: 6px; font-size: 11.5px; background: #fff; color: var(--txt); }
+
+    /* buttons */
+    .btn {
+      width: 100%; padding: 8px 12px;
+      border: none; border-radius: 8px;
+      font-size: 12.5px; font-weight: 600;
+      cursor: pointer; transition: all .15s;
+      margin-bottom: 6px; font-family: inherit;
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+    }
+    .btn:last-child { margin-bottom: 0; }
+    .bp { background: var(--accent); color: #fff; }
+    .bp:hover { background: var(--accent2); }
+    .bs { background: var(--bg); color: var(--accent); border: 1px solid var(--border); }
+    .bs:hover { background: #ede8e0; }
+    .bd { background: #fff5f3; color: #c0392b; border: 1px solid #f5cdc8; }
+    .bd:hover { background: #ffe8e5; }
+
+    .tips { font-size: 11px; color: var(--txt-lt); line-height: 1.8; }
+
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-thumb { background: #d4c8bb; border-radius: 2px; }
+  </style>
+</head>
+<body>
+
+<div id="hdr">
+  <span class="logo">🌿 Wreath Lab</span>
+  <span style="color:var(--txt-lt);margin:0 2px">·</span>
+  <span class="tagline">레터링 플라워 리스 디자인</span>
+</div>
+
+<div id="main">
+
+  <aside id="left">
+    <div class="ph">꽃 소재</div>
+    <div id="palette"></div>
+  </aside>
+
+  <div id="center">
+    <div id="canvas">
+      <img id="wreath-base" src="flower image/Wreath.png" alt="리스 틀">
+    </div>
+  </div>
+
+  <aside id="right">
+
+    <div class="sec">
+      <div class="st">선택한 소재</div>
+      <div id="no-sel">소재를 클릭해 선택하세요</div>
+      <div id="sel-ctrls">
+        <div class="cr">
+          <div class="cl"><span>크기</span><span class="cv" id="sz-val">100%</span></div>
+          <input type="range" id="sz-sl" min="10" max="300" value="100" step="5">
+        </div>
+        <div class="cr">
+          <div class="cl"><span>회전</span><span class="cv" id="rot-val">0°</span></div>
+          <input type="range" id="rot-sl" min="0" max="360" value="0">
+        </div>
+        <button class="btn bd" id="del-btn">🗑 선택 삭제</button>
+      </div>
+    </div>
+
+    <div class="sec">
+      <div class="st">배경 색상</div>
+      <div class="sg" id="sw-grid"></div>
+      <div class="cr-row">
+        <label for="bg-c">직접 선택</label>
+        <input type="color" id="bg-c" value="#ffffff">
+      </div>
+    </div>
+
+    <div class="sec">
+      <div class="st">레터링 텍스트</div>
+      <input type="text" id="txt-in" placeholder="텍스트 입력…">
+      <div class="r2">
+        <select id="fnt-sel">
+          <option value="'Noto Serif KR',serif">명조체</option>
+          <option value="'Noto Sans KR',sans-serif">고딕체</option>
+          <option value="'Gowun Dodum',sans-serif">도담체</option>
+          <option value="Georgia,serif">English</option>
+          <option value="cursive">필기체</option>
+        </select>
+        <input type="color" id="txt-col" value="#2d2420" title="글자 색상">
+      </div>
+      <div class="cr">
+        <div class="cl"><span>글자 크기</span><span class="cv" id="tsz-val">24px</span></div>
+        <input type="range" id="tsz-sl" min="10" max="100" value="24" step="2">
+      </div>
+      <button class="btn bs" id="add-txt-btn">✍️ 텍스트 추가</button>
+    </div>
+
+    <div class="sec">
+      <div class="st">저장 / 공유</div>
+      <button class="btn bp" id="save-btn">💾 PNG로 저장</button>
+      <button class="btn bs" id="share-btn">🔗 공유하기</button>
+      <button class="btn bd" id="reset-btn">↺ 전체 초기화</button>
+    </div>
+
+    <div class="sec">
+      <div class="st">사용 방법</div>
+      <div class="tips">
+        ① 왼쪽 꽃 소재 클릭<br>
+        ② 캔버스에서 드래그로 배치<br>
+        ③ 소재 클릭 → 크기·회전 조정<br>
+        ④ 레터링 텍스트 추가 후 배치<br>
+        ⑤ PNG 저장 (워터마크 포함)
+      </div>
+    </div>
+
+  </aside>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" crossorigin="anonymous"></script>
+<script>
+'use strict';
+
+/* ── Flower data ─────────────────────────────────────── */
+const FLOWERS = [
+  { name: '핑크 장미',     src: 'flower image/pink rose.png' },
+  { name: '보라 장미',     src: 'flower image/purple rose.png' },
+  { name: '수국',          src: 'flower image/hydrangea.png' },
+  { name: '라벤더',        src: 'flower image/lavender.png' },
+  { name: '안스리움',      src: 'flower image/anthurium.png' },
+  { name: '코랄 카네이션', src: 'flower image/coral carnation.png' },
+  { name: '노랑 장미',     src: 'flower image/yellow rose.png' },
+  { name: '소재',          src: 'flower image/KakaoTalk_20260527_215617498.png' },
+  { name: '소재 A', src: 'flower image/Gemini_Generated_Image_djorw8djorw8djor.png' },
+  { name: '소재 B', src: 'flower image/Gemini_Generated_Image_ra6f58ra6f58ra6f.png' },
+  { name: '소재 C', src: 'flower image/Gemini_Generated_Image_h8daq7h8daq7h8da.png' },
+  { name: '소재 D', src: 'flower image/Gemini_Generated_Image_byelypbyelypbyel.png' },
+  { name: '소재 E', src: 'flower image/Gemini_Generated_Image_e167b6e167b6e167.png' },
+  { name: '소재 F', src: 'flower image/Gemini_Generated_Image_q1voprq1voprq1vo.png' },
+  { name: '소재 G', src: 'flower image/Gemini_Generated_Image_yilphdyilphdyilp.png' },
+  { name: '소재 H', src: 'flower image/Gemini_Generated_Image_bqqxq5bqqxq5bqqx.png' },
+  { name: '소재 I', src: 'flower image/Gemini_Generated_Image_m6nwuzm6nwuzm6nw.png' },
+  { name: '소재 J', src: 'flower image/Gemini_Generated_Image_rbx9iurbx9iurbx9.png' },
+  { name: '소재 K', src: 'flower image/Gemini_Generated_Image_6w41oq6w41oq6w41.png' },
+  { name: '소재 L', src: 'flower image/Gemini_Generated_Image_7dz5i7dz5i7dz5i7.png' },
+  { name: '소재 M', src: 'flower image/Gemini_Generated_Image_rrxnq6rrxnq6rrxn.png' },
+  { name: '소재 N', src: 'flower image/Gemini_Generated_Image_ozjmggozjmggozjm.png' },
+  { name: '소재 O', src: 'flower image/Gemini_Generated_Image_xqycwwxqycwwxqyc.png' },
+  { name: '소재 P', src: 'flower image/Gemini_Generated_Image_l28cqql28cqql28c.png' },
+  { name: '소재 Q', src: 'flower image/Gemini_Generated_Image_ochueuochueuochu.png' },
+  { name: '소재 R', src: 'flower image/Gemini_Generated_Image_vmjzbivmjzbivmjz.png' },
+  { name: '소재 S', src: 'flower image/Gemini_Generated_Image_blgs2qblgs2qblgs.png' },
+  { name: '소재 T', src: 'flower image/Gemini_Generated_Image_rt6jc7rt6jc7rt6j.png' },
+  { name: '소재 U', src: 'flower image/Gemini_Generated_Image_cia4p6cia4p6cia4.png' },
+  { name: '소재 V', src: 'flower image/Gemini_Generated_Image_5slmt55slmt55slm.png' },
+  { name: '소재 W', src: 'flower image/Gemini_Generated_Image_5slmt55slmt55slm (1).png' },
+];
+
+const BG_COLORS = [
+  '#ffffff','#faf6f0','#fdf3e3','#fce4ec',
+  '#f1f8e9','#e8f0fe','#fce4fc','#e0f7fa',
+  '#3d3535','#1a1a2e','#2c3e2d','#3e2c1a',
+];
+
+/* ── DOM ─────────────────────────────────────────────── */
+const canvas  = document.getElementById('canvas');
+const noSel   = document.getElementById('no-sel');
+const selCtrls= document.getElementById('sel-ctrls');
+const szSl    = document.getElementById('sz-sl');
+const szVal   = document.getElementById('sz-val');
+const rotSl   = document.getElementById('rot-sl');
+const rotVal  = document.getElementById('rot-val');
+
+/* ── State ───────────────────────────────────────────── */
+let sel  = null;
+let zTop = 10;
+
+/* ── Build palette ───────────────────────────────────── */
+const pal = document.getElementById('palette');
+FLOWERS.forEach(f => {
+  const d = document.createElement('div');
+  d.className = 'fi';
+  d.title = f.name;
+  d.innerHTML = `<img src="${f.src}" alt="${f.name}" loading="lazy"><span>${f.name}</span>`;
+  d.addEventListener('click', () => addFlower(f.src, f.name));
+  pal.appendChild(d);
+});
+
+/* ── Build BG swatches ───────────────────────────────── */
+const swGrid = document.getElementById('sw-grid');
+BG_COLORS.forEach((c, i) => {
+  const s = document.createElement('div');
+  s.className = 'sw' + (i === 0 ? ' act' : '');
+  s.style.cssText = `background:${c};${c==='#ffffff'?'border-color:#ddd;':''}`;
+  s.title = c;
+  s.addEventListener('click', () => {
+    document.querySelectorAll('.sw').forEach(x => x.classList.remove('act'));
+    s.classList.add('act');
+    canvas.style.background = c;
+    document.getElementById('bg-c').value = c.startsWith('#') ? c : '#000000';
+  });
+  swGrid.appendChild(s);
+});
+document.getElementById('bg-c').addEventListener('input', e => {
+  canvas.style.background = e.target.value;
+  document.querySelectorAll('.sw').forEach(x => x.classList.remove('act'));
+});
+
+/* ── Add flower ──────────────────────────────────────── */
+function addFlower(src, name) {
+  const BASE = 120;
+  const jit  = () => (Math.random() - .5) * 44;
+  const el   = document.createElement('div');
+  el.className = 'cel flower';
+  el.style.cssText = `
+    left:${canvas.offsetWidth  / 2 - BASE/2 + jit()}px;
+    top: ${canvas.offsetHeight / 2 - BASE/2 + jit()}px;
+    width:${BASE}px; height:${BASE}px;
+  `;
+  el.dataset.base   = BASE;
+  el.dataset.scale  = 100;
+  el.dataset.rotate = 0;
+
+  const img = document.createElement('img');
+  img.src = src; img.alt = name;
+  el.appendChild(img);
+  canvas.appendChild(el);
+  attach(el);
+  pick(el);
+}
+
+/* ── Add text ────────────────────────────────────────── */
+document.getElementById('add-txt-btn').addEventListener('click', () => {
+  const text = document.getElementById('txt-in').value.trim();
+  if (!text) { alert('텍스트를 먼저 입력해주세요.'); return; }
+
+  const color = document.getElementById('txt-col').value;
+  const font  = document.getElementById('fnt-sel').value;
+  const fsize = +document.getElementById('tsz-sl').value;
+
+  const el = document.createElement('div');
+  el.className = 'cel txt';
+  el.style.cssText = `
+    left:${canvas.offsetWidth  / 2 - 60}px;
+    top: ${canvas.offsetHeight / 2 - fsize / 2}px;
+    color:${color}; font-family:${font}; font-size:${fsize}px;
+  `;
+  el.dataset.base   = fsize;
+  el.dataset.scale  = 100;
+  el.dataset.rotate = 0;
+  el.textContent = text;
+
+  canvas.appendChild(el);
+  attach(el);
+  pick(el);
+});
+
+document.getElementById('tsz-sl').addEventListener('input', function() {
+  document.getElementById('tsz-val').textContent = this.value + 'px';
+});
+
+/* ── Drag (mouse + touch) ────────────────────────────── */
+function attach(el) {
+  function startDrag(cx, cy) {
+    pick(el);
+    const x0 = cx, y0 = cy;
+    const l0 = parseFloat(el.style.left) || 0;
+    const t0 = parseFloat(el.style.top)  || 0;
+    return { x0, y0, l0, t0 };
+  }
+  function moveDrag(state, cx, cy) {
+    el.style.left = state.l0 + (cx - state.x0) + 'px';
+    el.style.top  = state.t0 + (cy - state.y0) + 'px';
+  }
+
+  // Mouse
+  el.addEventListener('mousedown', e => {
+    e.preventDefault();
+    const st = startDrag(e.clientX, e.clientY);
+    const mv = e => moveDrag(st, e.clientX, e.clientY);
+    const up = () => { document.removeEventListener('mousemove', mv); document.removeEventListener('mouseup', up); };
+    document.addEventListener('mousemove', mv);
+    document.addEventListener('mouseup', up);
+  });
+
+  // Touch
+  el.addEventListener('touchstart', e => {
+    e.preventDefault();
+    const t  = e.touches[0];
+    const st = startDrag(t.clientX, t.clientY);
+    const mv = e => { const t = e.touches[0]; moveDrag(st, t.clientX, t.clientY); };
+    const up = () => { el.removeEventListener('touchmove', mv); el.removeEventListener('touchend', up); };
+    el.addEventListener('touchmove', mv, { passive: false });
+    el.addEventListener('touchend', up);
+  }, { passive: false });
+}
+
+/* ── Select / deselect ───────────────────────────────── */
+function pick(el) {
+  if (sel) sel.classList.remove('sel');
+  sel = el;
+  el.classList.add('sel');
+  el.style.zIndex = ++zTop;
+  noSel.style.display    = 'none';
+  selCtrls.style.display = 'block';
+  szSl.value  = el.dataset.scale;
+  rotSl.value = el.dataset.rotate;
+  szVal.textContent  = el.dataset.scale + '%';
+  rotVal.textContent = el.dataset.rotate + '°';
+}
+
+function deselect() {
+  if (sel) { sel.classList.remove('sel'); sel = null; }
+  noSel.style.display    = 'block';
+  selCtrls.style.display = 'none';
+}
+
+canvas.addEventListener('mousedown', e => {
+  if (e.target === canvas || e.target.id === 'wreath-base') deselect();
+});
+
+/* ── Apply transform ─────────────────────────────────── */
+function applyTransform(el) {
+  const s = el.dataset.scale / 100;
+  const b = parseFloat(el.dataset.base);
+  const r = el.dataset.rotate;
+  if (el.classList.contains('flower')) {
+    const sz = b * s;
+    el.style.width  = sz + 'px';
+    el.style.height = sz + 'px';
+  } else {
+    el.style.fontSize = (b * s) + 'px';
+  }
+  el.style.transform = `rotate(${r}deg)`;
+}
+
+szSl.addEventListener('input', function() {
+  if (!sel) return;
+  sel.dataset.scale = this.value;
+  szVal.textContent = this.value + '%';
+  applyTransform(sel);
+});
+
+rotSl.addEventListener('input', function() {
+  if (!sel) return;
+  sel.dataset.rotate = this.value;
+  rotVal.textContent = this.value + '°';
+  applyTransform(sel);
+});
+
+/* ── Delete ──────────────────────────────────────────── */
+document.getElementById('del-btn').addEventListener('click', () => {
+  if (!sel) return;
+  sel.remove();
+  deselect();
+});
+
+/* ── Reset ───────────────────────────────────────────── */
+document.getElementById('reset-btn').addEventListener('click', () => {
+  if (!confirm('캔버스의 모든 소재와 텍스트를 삭제할까요?')) return;
+  canvas.querySelectorAll('.cel').forEach(e => e.remove());
+  deselect();
+});
+
+/* ── Save PNG ────────────────────────────────────────── */
+document.getElementById('save-btn').addEventListener('click', async () => {
+  const btn = document.getElementById('save-btn');
+  btn.textContent = '캡처 중…';
+  btn.disabled = true;
+  const prevSel = sel;
+  deselect();
+
+  try {
+    const rendered = await html2canvas(canvas, {
+      useCORS: true, allowTaint: true,
+      scale: 2, backgroundColor: null, logging: false,
+    });
+
+    const ctx = rendered.getContext('2d');
+    const w = rendered.width, h = rendered.height;
+    const fs = Math.round(w * 0.025);
+    ctx.save();
+    ctx.font = `bold ${fs}px 'Noto Sans KR', sans-serif`;
+    ctx.shadowColor = 'rgba(0,0,0,0.35)';
+    ctx.shadowBlur  = 6;
+    ctx.fillStyle   = 'rgba(255,255,255,0.72)';
+    ctx.textAlign   = 'right';
+    ctx.textBaseline= 'bottom';
+    ctx.fillText('Wreath Lab', w - 14, h - 14);
+    ctx.restore();
+
+    const a = document.createElement('a');
+    a.download = `wreath-lab-${Date.now()}.png`;
+    a.href = rendered.toDataURL('image/png');
+    a.click();
+  } catch (err) {
+    alert('저장 오류: ' + err.message);
+  } finally {
+    btn.innerHTML = '💾 PNG로 저장';
+    btn.disabled  = false;
+    if (prevSel && canvas.contains(prevSel)) pick(prevSel);
+  }
+});
+
+/* ── Share ───────────────────────────────────────────── */
+document.getElementById('share-btn').addEventListener('click', async () => {
+  const url = window.location.href;
+  try {
+    if (navigator.share) {
+      await navigator.share({ title: 'Wreath Lab – 내 플라워 리스', url });
+    } else {
+      await navigator.clipboard.writeText(url);
+      alert('링크가 클립보드에 복사되었습니다! 🌿');
+    }
+  } catch {
+    prompt('아래 링크를 복사하세요:', url);
+  }
+});
+</script>
+</body>
+</html>
