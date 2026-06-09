@@ -310,6 +310,13 @@
     }
     .layer-btn:hover { background: var(--orange-lt); color: var(--orange); border-color: var(--orange); }
     .layer-btn:disabled { opacity: 0.3; cursor: default; pointer-events: none; }
+    .layer-drag-handle {
+      color: var(--txt-lt); font-size: 14px; cursor: grab;
+      flex-shrink: 0; padding: 0 2px; user-select: none; line-height: 1;
+    }
+    .layer-drag-handle:active { cursor: grabbing; }
+    .layer-item.dragging { opacity: 0.4; }
+    .layer-item.drag-over { border-color: var(--orange) !important; background: var(--orange-lt) !important; }
 
     /* ── Right panel ── */
     #right-wrap {
@@ -653,6 +660,7 @@ const rotVal   = document.getElementById('rot-val');
 let sel     = null;
 let zTop    = 10;
 let canvasBg = null;
+let layerDragEl = null;
 
 /* ── Build palette ───────────────────────────────────── */
 const pal = document.getElementById('palette');
@@ -737,6 +745,7 @@ BG_COLORS.forEach((c, i) => {
     s.classList.add('act');
     canvasBg = c;
     canvas.style.background = c || 'transparent';
+    document.getElementById('center').style.background = c || 'linear-gradient(150deg, var(--ivory-d) 0%, #EAE0D5 100%)';
     if (c) document.getElementById('bg-c').value = c;
   });
   swGrid.appendChild(s);
@@ -744,6 +753,7 @@ BG_COLORS.forEach((c, i) => {
 document.getElementById('bg-c').addEventListener('input', e => {
   canvasBg = e.target.value;
   canvas.style.background = e.target.value;
+  document.getElementById('center').style.background = e.target.value;
   document.querySelectorAll('.sw').forEach(x => x.classList.remove('act'));
 });
 
@@ -765,6 +775,7 @@ function addFlower(src, name) {
   img.src = src; img.alt = name;
   el.appendChild(img);
   canvas.appendChild(el);
+  el.style.zIndex = ++zTop;
   attach(el);
   pick(el);
   renderLayers();
@@ -789,6 +800,7 @@ document.getElementById('add-txt-btn').addEventListener('click', () => {
   el.dataset.rotate = 0;
   el.textContent = text;
   canvas.appendChild(el);
+  el.style.zIndex = ++zTop;
   attach(el);
   pick(el);
   renderLayers();
@@ -923,7 +935,7 @@ function attach(el) {
 /* ── Select / deselect ───────────────────────────────── */
 function pick(el) {
   if (sel && sel !== el) sel.classList.remove('sel');
-  sel = el; el.classList.add('sel'); el.style.zIndex = ++zTop;
+  sel = el; el.classList.add('sel');
   noSel.style.display = 'none'; selCtrls.style.display = 'block';
   szSl.value = Math.min(300, Math.max(10, +el.dataset.scale));
   rotSl.value = el.dataset.rotate;
@@ -966,13 +978,19 @@ function renderLayers() {
   }
   empty.style.display = 'none';
 
-  // Sort descending by z-index: top of list = frontmost
   elements.sort((a, b) => (+b.style.zIndex || 0) - (+a.style.zIndex || 0));
 
   list.innerHTML = '';
-  elements.forEach((el, idx) => {
+  elements.forEach(el => {
     const item = document.createElement('div');
     item.className = 'layer-item' + (el === sel ? ' active' : '');
+    item.draggable = true;
+
+    // Drag handle
+    const handle = document.createElement('span');
+    handle.className = 'layer-drag-handle';
+    handle.textContent = '⠿';
+    handle.title = '드래그로 순서 변경';
 
     // Thumbnail
     const thumb = document.createElement('div');
@@ -1002,41 +1020,49 @@ function renderLayers() {
       name.textContent = txt.length > 11 ? txt.slice(0, 11) + '…' : txt;
     }
 
-    // Up / Down buttons
-    const btns = document.createElement('div');
-    btns.className = 'layer-btns';
+    // Drag events
+    item.addEventListener('dragstart', e => {
+      layerDragEl = el;
+      setTimeout(() => item.classList.add('dragging'), 0);
+      e.dataTransfer.effectAllowed = 'move';
+    });
+    item.addEventListener('dragend', () => {
+      item.classList.remove('dragging');
+      list.querySelectorAll('.drag-over').forEach(x => x.classList.remove('drag-over'));
+      layerDragEl = null;
+    });
+    item.addEventListener('dragover', e => {
+      e.preventDefault();
+      if (!layerDragEl || layerDragEl === el) return;
+      list.querySelectorAll('.drag-over').forEach(x => x.classList.remove('drag-over'));
+      item.classList.add('drag-over');
+    });
+    item.addEventListener('dragleave', e => {
+      if (!item.contains(e.relatedTarget)) item.classList.remove('drag-over');
+    });
+    item.addEventListener('drop', e => {
+      e.preventDefault();
+      item.classList.remove('drag-over');
+      if (!layerDragEl || layerDragEl === el) return;
+      const sorted = [...canvas.querySelectorAll('.cel')]
+        .sort((a, b) => (+b.style.zIndex || 0) - (+a.style.zIndex || 0));
+      const fromIdx = sorted.indexOf(layerDragEl);
+      const toIdx   = sorted.indexOf(el);
+      if (fromIdx === -1 || toIdx === -1) return;
+      sorted.splice(fromIdx, 1);
+      sorted.splice(toIdx, 0, layerDragEl);
+      const n = sorted.length;
+      sorted.forEach((e, i) => { e.style.zIndex = 10 + (n - 1 - i); });
+      zTop = Math.max(zTop, 10 + n - 1);
+      renderLayers();
+    });
 
-    const upBtn = document.createElement('button');
-    upBtn.className = 'layer-btn'; upBtn.textContent = '▲'; upBtn.title = '앞으로';
-    upBtn.disabled = idx === 0;
-    upBtn.addEventListener('click', e => { e.stopPropagation(); moveLayer(el, 'up', elements); });
-
-    const downBtn = document.createElement('button');
-    downBtn.className = 'layer-btn'; downBtn.textContent = '▼'; downBtn.title = '뒤로';
-    downBtn.disabled = idx === elements.length - 1;
-    downBtn.addEventListener('click', e => { e.stopPropagation(); moveLayer(el, 'down', elements); });
-
-    btns.appendChild(upBtn);
-    btns.appendChild(downBtn);
-
+    item.appendChild(handle);
     item.appendChild(thumb);
     item.appendChild(name);
-    item.appendChild(btns);
     item.addEventListener('click', () => pick(el));
-
     list.appendChild(item);
   });
-}
-
-function moveLayer(el, dir, elements) {
-  const idx = elements.indexOf(el);
-  const other = dir === 'up' ? elements[idx - 1] : elements[idx + 1];
-  if (!other) return;
-  const z1 = +el.style.zIndex || 0;
-  const z2 = +other.style.zIndex || 0;
-  el.style.zIndex    = z2;
-  other.style.zIndex = z1;
-  renderLayers();
 }
 
 /* ── Delete / Reset ──────────────────────────────────── */
