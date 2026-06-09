@@ -312,11 +312,32 @@
     .layer-btn:disabled { opacity: 0.3; cursor: default; pointer-events: none; }
 
     /* ── Right panel ── */
-    #right {
-      width: 210px; background: var(--white);
+    #right-wrap {
+      width: 210px;
       border-left: 1px solid var(--border);
+      flex-shrink: 0;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    #right {
+      background: var(--white);
       display: flex; flex-direction: column;
-      overflow-y: auto; flex-shrink: 0;
+      overflow-y: auto; flex: 1;
+    }
+    .scroll-hint {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      height: 52px;
+      background: linear-gradient(transparent, rgba(255,255,255,0.96) 65%);
+      pointer-events: none;
+      display: flex; align-items: flex-end; justify-content: center;
+      padding-bottom: 7px;
+      font-size: 11px; color: var(--txt-lt);
+      letter-spacing: 0.3px;
+      transition: opacity 0.25s;
+      z-index: 5;
     }
     .sec { padding: 13px 14px; border-bottom: 1px solid var(--border-lt); }
     .st {
@@ -429,6 +450,7 @@
     </div>
   </div>
 
+  <div id="right-wrap">
   <aside id="right">
 
     <div class="sec">
@@ -477,13 +499,6 @@
     </div>
 
     <div class="sec">
-      <div class="st">저장 / 공유</div>
-      <button class="btn bp" id="save-btn">PNG로 저장</button>
-      <button class="btn bs" id="share-btn">공유하기</button>
-      <button class="btn bq" id="reset-btn">전체 초기화</button>
-    </div>
-
-    <div class="sec">
       <div class="st">레이어</div>
       <div id="layers-empty">캔버스에 소재를 추가하면<br>레이어가 생성됩니다</div>
       <div id="layers-list"></div>
@@ -500,7 +515,16 @@
       </div>
     </div>
 
+    <div class="sec">
+      <div class="st">저장 / 공유</div>
+      <button class="btn bp" id="save-btn">PNG로 저장</button>
+      <button class="btn bs" id="share-btn">공유하기</button>
+      <button class="btn bq" id="reset-btn">전체 초기화</button>
+    </div>
+
   </aside>
+  <div class="scroll-hint" id="scroll-hint">▼ 스크롤</div>
+  </div>
 </div>
 
 <script>
@@ -515,6 +539,16 @@ const GROUPS = [
     { name: '빨간 장미',           en: 'red rose',             src: 'flower image/red rose.png' },
     { name: '살몬 장미',           en: 'salmon rose',          src: 'flower image/salmon rose.png' },
     { name: '화이트 장미',         en: 'white rose',           src: 'flower image/white rose.png' },
+    { name: '그레이 장미',         en: 'gray rose',            src: 'flower image/gray rose.png' },
+    { name: '딥블루 장미',         en: 'deepblue rose',        src: 'flower image/deepblue rose.png' },
+    { name: '아이보리핑크 장미',   en: 'ivory pink rose',      src: 'flower image/ivory pink rose.png' },
+    { name: '그린 장미',           en: 'green rose',           src: 'flower image/green rose.png' },
+    { name: '블랙 장미',           en: 'black rose',           src: 'flower image/black rose.png' },
+    { name: '코랄 장미',           en: 'coral rose',           src: 'flower image/coral rose.png' },
+    { name: '아이스블루 장미',     en: 'iceblue rose',         src: 'flower image/iceblue rose.png' },
+    { name: '오렌지 장미',         en: 'orange rose',          src: 'flower image/orange rose.png' },
+  ]},
+  { label: '솔라로즈', en: 'Solarose', items: [
     { name: '솔라로즈 바이올렛',   en: 'solarose violet',      src: 'flower image/solarose violet.png' },
     { name: '솔라로즈 시나몬핑크', en: 'solarose cinnamon pink', src: 'flower image/solarose cinnamon pink.png' },
     { name: '솔라로즈 오렌지',     en: 'solarose orange',      src: 'flower image/solarose orange.png' },
@@ -544,6 +578,7 @@ const GROUPS = [
     { name: '아이스블루 수국',   en: 'iceblue hydrangea',    src: 'flower image/iceblue hycrangea.png' },
     { name: '레드 수국',         en: 'red hydrangea',        src: 'flower image/red hycrangea.png' },
     { name: '실버 수국',         en: 'silver hydrangea',     src: 'flower image/silver hycrangea.png' },
+    { name: '오렌지 수국',       en: 'orange hydrangea',     src: 'flower image/orange hycrangea.png' },
   ]},
   { label: '쁘띠', en: 'Petit', items: [
     { name: '핑크 쁘띠',         en: 'pink petit',           src: 'flower image/pink petit.png' },
@@ -559,22 +594,41 @@ const GROUPS = [
     { name: '아이보리 팔라리스', en: 'ivory phalaris',       src: 'flower image/ivory phalaris.png' },
     { name: '오렌지 팔라리스',   en: 'orange phalaris',      src: 'flower image/orange phalaris.png' },
     { name: '핑크 팔라리스',     en: 'pink phalaris',        src: 'flower image/pink phalaris.png' },
+    { name: '레드 팔라리스',     en: 'red phalaris',         src: 'flower image/red phalaris.png' },
+    { name: '화이트 팔라리스',   en: 'white phalaris',       src: 'flower image/white phalaris.png' },
     { name: '바이올렛 팔라리스', en: 'violet phalaris',      src: 'flower image/violet phalaris.png' },
     { name: '노랑 팔라리스',     en: 'yellow phalaris',      src: 'flower image/yellow phalaris.png' },
   ]},
+  { label: '라구루스', en: 'Lagurus', items: [
+    { name: '마젠타 라구루스',   en: 'magenta lagurus',      src: 'flower image/magenta lagurus.png' },
+    { name: '블루 라구루스',     en: 'blue lagurus',         src: 'flower image/blue lagurus.png' },
+    { name: '그린 라구루스',     en: 'green lagurus',        src: 'flower image/green lagurus.png' },
+    { name: '핑크 라구루스',     en: 'pink lagurus',         src: 'flower image/pink lagurus.png' },
+    { name: '페일퍼플 라구루스', en: 'palepurple lagurus',   src: 'flower image/palepurple lagurus.png' },
+    { name: '페일핑크 라구루스', en: 'palepink lagurus',     src: 'flower image/palepink lagurus.png' },
+    { name: '화이트 라구루스',   en: 'white lagurus',        src: 'flower image/white lagurus.png' },
+    { name: '옐로우 라구루스',   en: 'yellow lagurus',       src: 'flower image/yellow lagurus.png' },
+  ]},
   { label: '소재', en: 'Materials', items: [
     { name: '라벤더',            en: 'lavender',             src: 'flower image/lavender.png' },
+    { name: '라벤더 1',          en: 'lavender 1',           src: 'flower image/lavender1.png' },
+    { name: '라벤더 2',          en: 'lavender 2',           src: 'flower image/lavender2.png' },
     { name: '안스리움',          en: 'anthurium',            src: 'flower image/anthurium.png' },
-    { name: '안스리움 3종',      en: 'anthurium three',      src: 'flower image/anthurium three.png' },
-    { name: '코랄 카네이션',     en: 'coral carnation',      src: 'flower image/coral carnation.png' },
     { name: '벌룬 플랜트',       en: 'violet balloon plant', src: 'flower image/violet Balloon plant.png' },
     { name: '핑크 벌룬 플랜트',  en: 'pink balloon plant',   src: 'flower image/pink Balloon plant.png' },
     { name: '포플러스',          en: 'populus',              src: 'flower image/populus.png' },
     { name: '포플러스 2잎',      en: 'populus 2leafs',       src: 'flower image/populus 2leafs.png' },
     { name: '골든볼',            en: 'goldenball',           src: 'flower image/goldenball.png' },
-    { name: '마젠타 라구루스',   en: 'magenta lagurus',      src: 'flower image/magenta lagurus.png' },
+    { name: '그린 루스커스',     en: 'green ruscus',         src: 'flower image/green ruscus.png' },
+    { name: '페일그린 루스커스', en: 'pale green ruscus',    src: 'flower image/pale green ruscus.png' },
     { name: '파인콘',            en: 'fine cone',            src: 'flower image/fine cone.png' },
     { name: '파인콘 2',          en: 'fine cone 2',          src: 'flower image/fine cone2.png' },
+    { name: '파인콘 3',          en: 'fine cone 3',          src: 'flower image/fine cone3.png' },
+    { name: '파인콘 4',          en: 'fine cone 4',          src: 'flower image/fine cone4.png' },
+    { name: '파인콘 5',          en: 'fine cone 5',          src: 'flower image/fine cone5.png' },
+    { name: '이모르텔 화이트',   en: 'white immortelle',     src: 'flower image/white immortelle.png' },
+    { name: '이모르텔 옐로우',   en: 'yellow immortelle',    src: 'flower image/yellow immortelle.png' },
+    { name: '이모르텔 옐로우 2', en: 'yellow immortelle 2',  src: 'flower image/yellow immortelle2.png' },
   ]},
 ];
 
@@ -1094,6 +1148,20 @@ document.getElementById('share-btn').addEventListener('click', async () => {
     else { await navigator.clipboard.writeText(url); alert('링크가 클립보드에 복사되었습니다.'); }
   } catch { prompt('아래 링크를 복사하세요:', url); }
 });
+
+/* ── Right panel scroll hint ─────────────────────────── */
+(function () {
+  const rightPanel = document.getElementById('right');
+  const hint = document.getElementById('scroll-hint');
+  function update() {
+    const scrollable = rightPanel.scrollHeight > rightPanel.clientHeight + 2;
+    const atBottom = rightPanel.scrollTop + rightPanel.clientHeight >= rightPanel.scrollHeight - 6;
+    hint.style.opacity = (scrollable && !atBottom) ? '1' : '0';
+  }
+  rightPanel.addEventListener('scroll', update, { passive: true });
+  window.addEventListener('resize', update);
+  update();
+})();
 </script>
 </body>
 </html>
