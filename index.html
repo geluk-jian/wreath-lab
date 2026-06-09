@@ -262,6 +262,55 @@
     .cel.flower img { width: 100%; height: 100%; object-fit: contain; display: block; pointer-events: none; }
     .cel.txt { white-space: pre; line-height: 1.25; }
 
+    /* ── Layers panel ── */
+    #layers-list {
+      max-height: 190px;
+      overflow-y: auto;
+      scrollbar-width: thin; scrollbar-color: var(--border) transparent;
+    }
+    #layers-empty {
+      font-size: 11px; color: var(--txt-lt);
+      text-align: center; padding: 10px 0 4px;
+      line-height: 1.6;
+    }
+    .layer-item {
+      display: flex; align-items: center; gap: 7px;
+      padding: 5px 5px; border-radius: 7px;
+      cursor: pointer; margin-bottom: 2px;
+      transition: background .12s;
+      border: 1.5px solid transparent;
+    }
+    .layer-item:hover { background: var(--ivory-d); }
+    .layer-item.active {
+      background: var(--orange-lt);
+      border-color: var(--orange);
+    }
+    .layer-thumb {
+      width: 30px; height: 30px; border-radius: 5px;
+      background: var(--ivory); border: 1px solid var(--border-lt);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; overflow: hidden;
+    }
+    .layer-thumb img { width: 100%; height: 100%; object-fit: contain; }
+    .layer-thumb-txt {
+      font-size: 13px; font-weight: 700; color: var(--txt-mid);
+    }
+    .layer-name {
+      flex: 1; font-size: 11px; color: var(--txt);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .layer-btns { display: flex; flex-direction: column; gap: 2px; }
+    .layer-btn {
+      width: 20px; height: 17px;
+      background: var(--ivory-d); border: 1px solid var(--border);
+      border-radius: 4px; cursor: pointer; font-size: 9px;
+      display: flex; align-items: center; justify-content: center;
+      color: var(--txt-mid); transition: background .1s, color .1s;
+      padding: 0;
+    }
+    .layer-btn:hover { background: var(--orange-lt); color: var(--orange); border-color: var(--orange); }
+    .layer-btn:disabled { opacity: 0.3; cursor: default; pointer-events: none; }
+
     /* ── Right panel ── */
     #right {
       width: 210px; background: var(--white);
@@ -432,6 +481,12 @@
       <button class="btn bp" id="save-btn">PNG로 저장</button>
       <button class="btn bs" id="share-btn">공유하기</button>
       <button class="btn bq" id="reset-btn">전체 초기화</button>
+    </div>
+
+    <div class="sec">
+      <div class="st">레이어</div>
+      <div id="layers-empty">캔버스에 소재를 추가하면<br>레이어가 생성됩니다</div>
+      <div id="layers-list"></div>
     </div>
 
     <div class="sec">
@@ -658,6 +713,7 @@ function addFlower(src, name) {
   canvas.appendChild(el);
   attach(el);
   pick(el);
+  renderLayers();
 }
 
 /* ── Add text ────────────────────────────────────────── */
@@ -681,6 +737,7 @@ document.getElementById('add-txt-btn').addEventListener('click', () => {
   canvas.appendChild(el);
   attach(el);
   pick(el);
+  renderLayers();
 });
 document.getElementById('tsz-sl').addEventListener('input', function () {
   document.getElementById('tsz-val').textContent = this.value + 'px';
@@ -819,6 +876,7 @@ function pick(el) {
   szVal.textContent = el.dataset.scale + '%';
   rotVal.textContent = el.dataset.rotate + '°';
   updateHandles();
+  renderLayers();
 }
 function deselect() {
   if (sel) { sel.classList.remove('sel'); sel = null; }
@@ -841,11 +899,97 @@ function applyTransform(el) {
 szSl.addEventListener('input', function () { if (!sel) return; sel.dataset.scale = this.value; szVal.textContent = this.value+'%'; applyTransform(sel); });
 rotSl.addEventListener('input', function () { if (!sel) return; sel.dataset.rotate = this.value; rotVal.textContent = this.value+'°'; applyTransform(sel); });
 
+/* ── Layers panel ────────────────────────────────────── */
+function renderLayers() {
+  const list  = document.getElementById('layers-list');
+  const empty = document.getElementById('layers-empty');
+  const elements = [...canvas.querySelectorAll('.cel')];
+
+  if (elements.length === 0) {
+    list.innerHTML = '';
+    empty.style.display = 'block';
+    return;
+  }
+  empty.style.display = 'none';
+
+  // Sort descending by z-index: top of list = frontmost
+  elements.sort((a, b) => (+b.style.zIndex || 0) - (+a.style.zIndex || 0));
+
+  list.innerHTML = '';
+  elements.forEach((el, idx) => {
+    const item = document.createElement('div');
+    item.className = 'layer-item' + (el === sel ? ' active' : '');
+
+    // Thumbnail
+    const thumb = document.createElement('div');
+    thumb.className = 'layer-thumb';
+    if (el.classList.contains('flower')) {
+      const src = el.querySelector('img')?.src;
+      if (src) {
+        const ti = document.createElement('img');
+        ti.src = src; ti.alt = '';
+        thumb.appendChild(ti);
+      }
+    } else {
+      const t = document.createElement('span');
+      t.className = 'layer-thumb-txt';
+      t.textContent = 'T';
+      t.style.color = el.style.color || 'var(--txt-mid)';
+      thumb.appendChild(t);
+    }
+
+    // Name
+    const name = document.createElement('div');
+    name.className = 'layer-name';
+    if (el.classList.contains('flower')) {
+      name.textContent = el.querySelector('img')?.alt || '소재';
+    } else {
+      const txt = el.textContent.trim();
+      name.textContent = txt.length > 11 ? txt.slice(0, 11) + '…' : txt;
+    }
+
+    // Up / Down buttons
+    const btns = document.createElement('div');
+    btns.className = 'layer-btns';
+
+    const upBtn = document.createElement('button');
+    upBtn.className = 'layer-btn'; upBtn.textContent = '▲'; upBtn.title = '앞으로';
+    upBtn.disabled = idx === 0;
+    upBtn.addEventListener('click', e => { e.stopPropagation(); moveLayer(el, 'up', elements); });
+
+    const downBtn = document.createElement('button');
+    downBtn.className = 'layer-btn'; downBtn.textContent = '▼'; downBtn.title = '뒤로';
+    downBtn.disabled = idx === elements.length - 1;
+    downBtn.addEventListener('click', e => { e.stopPropagation(); moveLayer(el, 'down', elements); });
+
+    btns.appendChild(upBtn);
+    btns.appendChild(downBtn);
+
+    item.appendChild(thumb);
+    item.appendChild(name);
+    item.appendChild(btns);
+    item.addEventListener('click', () => pick(el));
+
+    list.appendChild(item);
+  });
+}
+
+function moveLayer(el, dir, elements) {
+  const idx = elements.indexOf(el);
+  const other = dir === 'up' ? elements[idx - 1] : elements[idx + 1];
+  if (!other) return;
+  const z1 = +el.style.zIndex || 0;
+  const z2 = +other.style.zIndex || 0;
+  el.style.zIndex    = z2;
+  other.style.zIndex = z1;
+  renderLayers();
+}
+
 /* ── Delete / Reset ──────────────────────────────────── */
-document.getElementById('del-btn').addEventListener('click', () => { if (!sel) return; sel.remove(); deselect(); });
+document.getElementById('del-btn').addEventListener('click', () => { if (!sel) return; sel.remove(); deselect(); renderLayers(); });
 document.getElementById('reset-btn').addEventListener('click', () => {
   if (!confirm('캔버스의 모든 소재와 텍스트를 삭제할까요?')) return;
-  canvas.querySelectorAll('.cel').forEach(e => e.remove()); deselect();
+  canvas.querySelectorAll('.cel').forEach(e => e.remove()); deselect(); renderLayers();
 });
 
 /* ── PNG Export ──────────────────────────────────────── */
