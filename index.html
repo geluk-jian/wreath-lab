@@ -63,7 +63,7 @@
 
     /* ── Left panel ── */
     #left {
-      width: 154px;
+      width: 240px;
       background: var(--white);
       border-right: 1px solid var(--border);
       display: flex; flex-direction: column; flex-shrink: 0;
@@ -76,25 +76,113 @@
       border-bottom: 1px solid var(--border-lt);
       flex-shrink: 0;
     }
+
+    /* ── Search bar ── */
+    .search-wrap {
+      padding: 8px 10px;
+      border-bottom: 1px solid var(--border-lt);
+      flex-shrink: 0;
+    }
+    .search-inner {
+      display: flex;
+      align-items: center;
+      background: var(--ivory);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0 9px;
+      transition: border-color .15s, background .15s;
+    }
+    .search-inner:focus-within {
+      border-color: var(--orange);
+      background: var(--white);
+    }
+    .search-icon {
+      color: var(--txt-lt);
+      font-size: 13px;
+      flex-shrink: 0;
+      margin-right: 6px;
+    }
+    #flower-search {
+      width: 100%;
+      padding: 7px 0;
+      border: none;
+      outline: none;
+      font-size: 12px;
+      background: transparent;
+      color: var(--txt);
+      font-family: 'Pretendard', sans-serif;
+    }
+    #flower-search::placeholder { color: var(--txt-lt); }
+
+    /* ── Palette ── */
     #palette {
       flex: 1; overflow-y: auto;
-      padding: 4px 5px 10px;
+      padding: 4px 6px 12px;
       scrollbar-width: thin; scrollbar-color: var(--border) transparent;
     }
+
+    /* ── Category sections ── */
     .cat-sec { margin-bottom: 2px; }
-    .cat-lbl {
-      font-size: 9px; font-weight: 700; letter-spacing: 1.4px;
-      text-transform: uppercase; color: var(--txt-lt);
-      padding: 8px 5px 4px;
+
+    .cat-hdr {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 6px 7px;
+      cursor: pointer;
+      border-radius: 7px;
+      transition: background .12s;
+      user-select: none;
     }
+    .cat-hdr:hover { background: var(--ivory-d); }
+
+    .cat-ttl {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--txt);
+      letter-spacing: -0.1px;
+    }
+    .cat-en {
+      font-size: 10.5px;
+      font-weight: 400;
+      color: var(--txt-lt);
+      margin-left: 5px;
+    }
+    .cat-arrow {
+      font-size: 11px;
+      color: var(--txt-mid);
+      transition: transform .22s ease;
+      display: inline-block;
+      flex-shrink: 0;
+    }
+    .cat-sec.open .cat-arrow { transform: rotate(180deg); }
+
+    .cat-body {
+      display: none;
+      padding-bottom: 4px;
+    }
+    .cat-sec.open .cat-body { display: block; }
+
+    /* Search empty state */
+    .no-result {
+      display: none;
+      text-align: center;
+      color: var(--txt-lt);
+      font-size: 11.5px;
+      padding: 20px 0 10px;
+    }
+
+    /* ── Flower grid ── */
     .cat-grid {
-      display: grid; grid-template-columns: 1fr 1fr; gap: 3px;
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 3px;
     }
     .fi {
       cursor: pointer;
       border-radius: 7px;
       border: 2px solid transparent;
-      height: 80px;
+      height: 72px;
       overflow: hidden;
       transition: border-color .15s;
       background: var(--ivory);
@@ -118,10 +206,9 @@
     }
     #canvas-wrap { position: relative; flex-shrink: 0; }
 
-    /* Canvas: transparent by default — user picks background color */
     #canvas {
       position: relative;
-      width: min(560px, calc(100vw - 154px - 210px - 28px), calc(100vh - 52px - 28px));
+      width: min(373px, calc((100vw - 240px - 210px - 28px) * 0.9), calc((100vh - 52px - 28px) * 0.9));
       aspect-ratio: 1;
       background: transparent;
       border-radius: 16px;
@@ -130,7 +217,6 @@
       display: block;
     }
 
-    /* Wreath sits at z-index 1; flowers go on top at z-index 2+ */
     #wreath-base {
       position: absolute;
       top: 50%; left: 50%;
@@ -206,7 +292,6 @@
     }
     .sw:hover { transform: scale(1.18); }
     .sw.act { border-color: var(--orange); }
-    /* Checkered "transparent" swatch */
     .sw-clear {
       background-image:
         linear-gradient(45deg, #ccc 25%, transparent 25%),
@@ -275,7 +360,15 @@
 
   <aside id="left">
     <div class="ph">꽃 소재</div>
-    <div id="palette"></div>
+    <div class="search-wrap">
+      <div class="search-inner">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="flower-search" placeholder="꽃 검색 · Search">
+      </div>
+    </div>
+    <div id="palette">
+      <div class="no-result" id="no-result">검색 결과가 없습니다</div>
+    </div>
   </aside>
 
   <div id="center">
@@ -358,80 +451,80 @@
 <script>
 'use strict';
 
-/* ── Flower data — grouped by category ───────────────── */
+/* ── Flower data ────────────────────────────────────── */
 const GROUPS = [
-  { label: '장미', items: [
-    { name: '핑크 장미',           src: 'flower image/pink rose.png' },
-    { name: '보라 장미',           src: 'flower image/purple rose.png' },
-    { name: '노랑 장미',           src: 'flower image/yellow rose.png' },
-    { name: '빨간 장미',           src: 'flower image/red rose.png' },
-    { name: '살몬 장미',           src: 'flower image/salmon rose.png' },
-    { name: '화이트 장미',         src: 'flower image/white rose.png' },
-    { name: '솔라로즈 바이올렛',   src: 'flower image/solarose violet.png' },
-    { name: '솔라로즈 시나몬핑크', src: 'flower image/solarose cinnamon pink.png' },
-    { name: '솔라로즈 오렌지',     src: 'flower image/solarose orange.png' },
-    { name: '솔라로즈 아이보리',   src: 'flower image/solarose ivory.png' },
-    { name: '솔라로즈 블루',       src: 'flower image/solarose blue.png' },
-    { name: '솔라로즈 버건디',     src: 'flower image/solarose burgundy.png' },
-    { name: '솔라로즈 그린',       src: 'flower image/solarose green.png' },
-    { name: '솔라로즈 핑크레드',   src: 'flower image/solarose pinkred.png' },
-    { name: '솔라로즈 레드',       src: 'flower image/solarose red.png' },
-    { name: '솔라로즈 화이트',     src: 'flower image/solarose white.png' },
-    { name: '솔라로즈 옐로우',     src: 'flower image/solarose yellow.png' },
+  { label: '장미', en: 'Rose', items: [
+    { name: '핑크 장미',           en: 'pink rose',            src: 'flower image/pink rose.png' },
+    { name: '보라 장미',           en: 'purple rose',          src: 'flower image/purple rose.png' },
+    { name: '노랑 장미',           en: 'yellow rose',          src: 'flower image/yellow rose.png' },
+    { name: '빨간 장미',           en: 'red rose',             src: 'flower image/red rose.png' },
+    { name: '살몬 장미',           en: 'salmon rose',          src: 'flower image/salmon rose.png' },
+    { name: '화이트 장미',         en: 'white rose',           src: 'flower image/white rose.png' },
+    { name: '솔라로즈 바이올렛',   en: 'solarose violet',      src: 'flower image/solarose violet.png' },
+    { name: '솔라로즈 시나몬핑크', en: 'solarose cinnamon pink', src: 'flower image/solarose cinnamon pink.png' },
+    { name: '솔라로즈 오렌지',     en: 'solarose orange',      src: 'flower image/solarose orange.png' },
+    { name: '솔라로즈 아이보리',   en: 'solarose ivory',       src: 'flower image/solarose ivory.png' },
+    { name: '솔라로즈 블루',       en: 'solarose blue',        src: 'flower image/solarose blue.png' },
+    { name: '솔라로즈 버건디',     en: 'solarose burgundy',    src: 'flower image/solarose burgundy.png' },
+    { name: '솔라로즈 그린',       en: 'solarose green',       src: 'flower image/solarose green.png' },
+    { name: '솔라로즈 핑크레드',   en: 'solarose pinkred',     src: 'flower image/solarose pinkred.png' },
+    { name: '솔라로즈 레드',       en: 'solarose red',         src: 'flower image/solarose red.png' },
+    { name: '솔라로즈 화이트',     en: 'solarose white',       src: 'flower image/solarose white.png' },
+    { name: '솔라로즈 옐로우',     en: 'solarose yellow',      src: 'flower image/solarose yellow.png' },
   ]},
-  { label: '수국', items: [
-    { name: '수국',                src: 'flower image/hydrangea.png' },
-    { name: '핑크 수국',           src: 'flower image/pink hydrangea.png' },
-    { name: '살몬 수국',           src: 'flower image/salmon hydrangea.png' },
-    { name: '노랑 수국',           src: 'flower image/yellow hydrangea.png' },
-    { name: '보라 수국',           src: 'flower image/purple hydrangea.png' },
-    { name: '그린 수국',           src: 'flower image/green hydrangea.png' },
-    { name: '화이트 수국',         src: 'flower image/white hydrangea.png' },
-    { name: '민트 수국',           src: 'flower image/mint hycrangea.png' },
-    { name: '스카이블루 수국',     src: 'flower image/skyblue hydrangea.png' },
-    { name: '실크핑크 수국',       src: 'flower image/silkpink hydrangea.png' },
-    { name: '딥그린 수국',         src: 'flower image/deepgreen hycrangea.png' },
-    { name: '골드 수국',           src: 'flower image/gold hycrangea.png' },
-    { name: '그레이 수국',         src: 'flower image/grey hycrangea.png' },
-    { name: '아이스블루 수국',     src: 'flower image/iceblue hycrangea.png' },
-    { name: '레드 수국',           src: 'flower image/red hycrangea.png' },
-    { name: '실버 수국',           src: 'flower image/silver hycrangea.png' },
+  { label: '수국', en: 'Hydrangea', items: [
+    { name: '수국',              en: 'hydrangea',            src: 'flower image/hydrangea.png' },
+    { name: '핑크 수국',         en: 'pink hydrangea',       src: 'flower image/pink hydrangea.png' },
+    { name: '살몬 수국',         en: 'salmon hydrangea',     src: 'flower image/salmon hydrangea.png' },
+    { name: '노랑 수국',         en: 'yellow hydrangea',     src: 'flower image/yellow hydrangea.png' },
+    { name: '보라 수국',         en: 'purple hydrangea',     src: 'flower image/purple hydrangea.png' },
+    { name: '그린 수국',         en: 'green hydrangea',      src: 'flower image/green hydrangea.png' },
+    { name: '화이트 수국',       en: 'white hydrangea',      src: 'flower image/white hydrangea.png' },
+    { name: '민트 수국',         en: 'mint hydrangea',       src: 'flower image/mint hycrangea.png' },
+    { name: '스카이블루 수국',   en: 'skyblue hydrangea',    src: 'flower image/skyblue hydrangea.png' },
+    { name: '실크핑크 수국',     en: 'silkpink hydrangea',   src: 'flower image/silkpink hydrangea.png' },
+    { name: '딥그린 수국',       en: 'deepgreen hydrangea',  src: 'flower image/deepgreen hycrangea.png' },
+    { name: '골드 수국',         en: 'gold hydrangea',       src: 'flower image/gold hycrangea.png' },
+    { name: '그레이 수국',       en: 'grey hydrangea',       src: 'flower image/grey hycrangea.png' },
+    { name: '아이스블루 수국',   en: 'iceblue hydrangea',    src: 'flower image/iceblue hycrangea.png' },
+    { name: '레드 수국',         en: 'red hydrangea',        src: 'flower image/red hycrangea.png' },
+    { name: '실버 수국',         en: 'silver hydrangea',     src: 'flower image/silver hycrangea.png' },
   ]},
-  { label: '쁘띠', items: [
-    { name: '핑크 쁘띠',          src: 'flower image/pink petit.png' },
-    { name: '블루 쁘띠',          src: 'flower image/blue petit.png' },
-    { name: '바이올렛 쁘띠',      src: 'flower image/violet petit.png' },
-    { name: '화이트 쁘띠',        src: 'flower image/white petit.png' },
-    { name: '노랑 쁘띠',          src: 'flower image/yellow petit.png' },
+  { label: '쁘띠', en: 'Petit', items: [
+    { name: '핑크 쁘띠',         en: 'pink petit',           src: 'flower image/pink petit.png' },
+    { name: '블루 쁘띠',         en: 'blue petit',           src: 'flower image/blue petit.png' },
+    { name: '바이올렛 쁘띠',     en: 'violet petit',         src: 'flower image/violet petit.png' },
+    { name: '화이트 쁘띠',       en: 'white petit',          src: 'flower image/white petit.png' },
+    { name: '노랑 쁘띠',         en: 'yellow petit',         src: 'flower image/yellow petit.png' },
   ]},
-  { label: '팔라리스', items: [
-    { name: '그린 팔라리스',       src: 'flower image/green phalaris.png' },
-    { name: '내추럴 팔라리스',     src: 'flower image/natural phalaris.png' },
-    { name: '브라운 팔라리스',     src: 'flower image/brown phalaris.png' },
-    { name: '아이보리 팔라리스',   src: 'flower image/ivory phalaris.png' },
-    { name: '오렌지 팔라리스',     src: 'flower image/orange phalaris.png' },
-    { name: '핑크 팔라리스',       src: 'flower image/pink phalaris.png' },
-    { name: '바이올렛 팔라리스',   src: 'flower image/violet phalaris.png' },
-    { name: '노랑 팔라리스',       src: 'flower image/yellow phalaris.png' },
+  { label: '팔라리스', en: 'Phalaris', items: [
+    { name: '그린 팔라리스',     en: 'green phalaris',       src: 'flower image/green phalaris.png' },
+    { name: '내추럴 팔라리스',   en: 'natural phalaris',     src: 'flower image/natural phalaris.png' },
+    { name: '브라운 팔라리스',   en: 'brown phalaris',       src: 'flower image/brown phalaris.png' },
+    { name: '아이보리 팔라리스', en: 'ivory phalaris',       src: 'flower image/ivory phalaris.png' },
+    { name: '오렌지 팔라리스',   en: 'orange phalaris',      src: 'flower image/orange phalaris.png' },
+    { name: '핑크 팔라리스',     en: 'pink phalaris',        src: 'flower image/pink phalaris.png' },
+    { name: '바이올렛 팔라리스', en: 'violet phalaris',      src: 'flower image/violet phalaris.png' },
+    { name: '노랑 팔라리스',     en: 'yellow phalaris',      src: 'flower image/yellow phalaris.png' },
   ]},
-  { label: '소재', items: [
-    { name: '라벤더',              src: 'flower image/lavender.png' },
-    { name: '안스리움',            src: 'flower image/anthurium.png' },
-    { name: '안스리움 3종',        src: 'flower image/anthurium three.png' },
-    { name: '코랄 카네이션',       src: 'flower image/coral carnation.png' },
-    { name: '벌룬 플랜트',         src: 'flower image/violet Balloon plant.png' },
-    { name: '핑크 벌룬 플랜트',    src: 'flower image/pink Balloon plant.png' },
-    { name: '포플러스',            src: 'flower image/populus.png' },
-    { name: '포플러스 2잎',        src: 'flower image/populus 2leafs.png' },
-    { name: '골든볼',              src: 'flower image/goldenball.png' },
-    { name: '마젠타 라구루스',     src: 'flower image/magenta lagurus.png' },
-    { name: '파인콘',              src: 'flower image/fine cone.png' },
-    { name: '파인콘 2',            src: 'flower image/fine cone2.png' },
+  { label: '소재', en: 'Materials', items: [
+    { name: '라벤더',            en: 'lavender',             src: 'flower image/lavender.png' },
+    { name: '안스리움',          en: 'anthurium',            src: 'flower image/anthurium.png' },
+    { name: '안스리움 3종',      en: 'anthurium three',      src: 'flower image/anthurium three.png' },
+    { name: '코랄 카네이션',     en: 'coral carnation',      src: 'flower image/coral carnation.png' },
+    { name: '벌룬 플랜트',       en: 'violet balloon plant', src: 'flower image/violet Balloon plant.png' },
+    { name: '핑크 벌룬 플랜트',  en: 'pink balloon plant',   src: 'flower image/pink Balloon plant.png' },
+    { name: '포플러스',          en: 'populus',              src: 'flower image/populus.png' },
+    { name: '포플러스 2잎',      en: 'populus 2leafs',       src: 'flower image/populus 2leafs.png' },
+    { name: '골든볼',            en: 'goldenball',           src: 'flower image/goldenball.png' },
+    { name: '마젠타 라구루스',   en: 'magenta lagurus',      src: 'flower image/magenta lagurus.png' },
+    { name: '파인콘',            en: 'fine cone',            src: 'flower image/fine cone.png' },
+    { name: '파인콘 2',          en: 'fine cone 2',          src: 'flower image/fine cone2.png' },
   ]},
 ];
 
 const BG_COLORS = [
-  null,       // transparent
+  null,
   '#ffffff', '#FAF7F2', '#FEF1E6', '#FDF3E3',
   '#FDE8E8', '#F0F5EC', '#E8F0FE',
   '#2A2118', '#1A1A2E', '#1E2E1E', '#3A2510',
@@ -450,31 +543,72 @@ const rotVal   = document.getElementById('rot-val');
 /* ── State ───────────────────────────────────────────── */
 let sel     = null;
 let zTop    = 10;
-let canvasBg = null; // null = transparent
+let canvasBg = null;
 
-/* ── Build palette (category groups) ────────────────── */
+/* ── Build palette ───────────────────────────────────── */
 const pal = document.getElementById('palette');
-GROUPS.forEach(group => {
+const noResult = document.getElementById('no-result');
+
+GROUPS.forEach((group, gi) => {
   const sec = document.createElement('div');
-  sec.className = 'cat-sec';
-  const lbl = document.createElement('div');
-  lbl.className = 'cat-lbl';
-  lbl.textContent = group.label;
-  sec.appendChild(lbl);
+  sec.className = 'cat-sec' + (gi === 0 ? ' open' : '');
+
+  const hdr = document.createElement('div');
+  hdr.className = 'cat-hdr';
+  hdr.innerHTML = `<span class="cat-ttl">${group.label}<span class="cat-en">(${group.en})</span></span><span class="cat-arrow">▼</span>`;
+  hdr.addEventListener('click', () => sec.classList.toggle('open'));
+  sec.appendChild(hdr);
+
+  const body = document.createElement('div');
+  body.className = 'cat-body';
+
   const grid = document.createElement('div');
   grid.className = 'cat-grid';
+
   group.items.forEach(f => {
     const d = document.createElement('div');
     d.className = 'fi';
-    d.title = f.name;
+    d.title = f.name + ' · ' + f.en;
+    d.dataset.name = f.name;
+    d.dataset.en = f.en;
     const img = document.createElement('img');
     img.src = f.src; img.alt = f.name; img.loading = 'lazy';
     d.appendChild(img);
     d.addEventListener('click', () => addFlower(f.src, f.name));
     grid.appendChild(d);
   });
-  sec.appendChild(grid);
+
+  body.appendChild(grid);
+  sec.appendChild(body);
   pal.appendChild(sec);
+});
+
+/* ── Search ──────────────────────────────────────────── */
+document.getElementById('flower-search').addEventListener('input', function () {
+  const q = this.value.trim().toLowerCase();
+
+  if (!q) {
+    document.querySelectorAll('.cat-sec').forEach((sec, i) => {
+      sec.style.display = '';
+      sec.querySelectorAll('.fi').forEach(fi => fi.style.display = '');
+      sec.classList.toggle('open', i === 0);
+    });
+    noResult.style.display = 'none';
+    return;
+  }
+
+  let anyMatch = false;
+  document.querySelectorAll('.cat-sec').forEach(sec => {
+    let hasMatch = false;
+    sec.querySelectorAll('.fi').forEach(fi => {
+      const match = fi.dataset.name.toLowerCase().includes(q) || fi.dataset.en.toLowerCase().includes(q);
+      fi.style.display = match ? '' : 'none';
+      if (match) hasMatch = true;
+    });
+    sec.style.display = hasMatch ? '' : 'none';
+    if (hasMatch) { sec.classList.add('open'); anyMatch = true; }
+  });
+  noResult.style.display = anyMatch ? 'none' : 'block';
 });
 
 /* ── Build BG swatches ───────────────────────────────── */
@@ -714,8 +848,7 @@ document.getElementById('reset-btn').addEventListener('click', () => {
   canvas.querySelectorAll('.cel').forEach(e => e.remove()); deselect();
 });
 
-/* ── PNG Export (custom canvas draw — no html2canvas) ── */
-// Draws image maintaining object-fit:contain within a rect
+/* ── PNG Export ──────────────────────────────────────── */
 function drawContain(ctx, imgEl, x, y, w, h) {
   const iw = imgEl.naturalWidth, ih = imgEl.naturalHeight;
   if (!iw || !ih) { ctx.drawImage(imgEl, x, y, w, h); return; }
@@ -723,7 +856,6 @@ function drawContain(ctx, imgEl, x, y, w, h) {
   const dw = iw * s, dh = ih * s;
   ctx.drawImage(imgEl, x + (w - dw) / 2, y + (h - dh) / 2, dw, dh);
 }
-// Draws image centered at canvas origin (use with ctx.translate + ctx.rotate)
 function drawContainCentered(ctx, imgEl, w, h) {
   const iw = imgEl.naturalWidth, ih = imgEl.naturalHeight;
   if (!iw || !ih) { ctx.drawImage(imgEl, -w/2, -h/2, w, h); return; }
@@ -735,7 +867,7 @@ function drawContainCentered(ctx, imgEl, w, h) {
 document.getElementById('save-btn').addEventListener('click', async () => {
   const btn = document.getElementById('save-btn');
   btn.textContent = '저장 중…'; btn.disabled = true;
-  const prevSel = sel; deselect(); // hide handles
+  const prevSel = sel; deselect();
 
   try {
     const W   = canvas.offsetWidth;
@@ -746,16 +878,13 @@ document.getElementById('save-btn').addEventListener('click', async () => {
     const ctx  = off.getContext('2d');
     ctx.scale(DPR, DPR);
 
-    // 1. Background
     const bg = canvasBg || '#ffffff';
     ctx.fillStyle = bg;
     ctx.fillRect(0, 0, W, H);
 
-    // 2. Wreath (z-index 1, behind flowers)
     const wreathEl = document.getElementById('wreath-base');
     drawContain(ctx, wreathEl, W * 0.04, H * 0.04, W * 0.92, H * 0.92);
 
-    // 3. All .cel elements, sorted by z-index (paint order)
     const elements = [...canvas.querySelectorAll('.cel')];
     elements.sort((a, b) => (+a.style.zIndex || 0) - (+b.style.zIndex || 0));
 
@@ -791,7 +920,6 @@ document.getElementById('save-btn').addEventListener('click', async () => {
       ctx.restore();
     }
 
-    // 4. Watermark
     const fs = Math.round(W * 0.022);
     ctx.save();
     ctx.font = `600 ${fs}px Pretendard, sans-serif`;
@@ -801,7 +929,6 @@ document.getElementById('save-btn').addEventListener('click', async () => {
     ctx.fillText('Wreath Lab', W - 14, H - 14);
     ctx.restore();
 
-    // 5. Download
     const a = document.createElement('a');
     a.download = `wreath-lab-${Date.now()}.png`;
     a.href = off.toDataURL('image/png');
