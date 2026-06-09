@@ -311,9 +311,11 @@
     .layer-btn:hover { background: var(--orange-lt); color: var(--orange); border-color: var(--orange); }
     .layer-btn:disabled { opacity: 0.3; cursor: default; pointer-events: none; }
     .layer-drag-handle {
-      color: var(--txt-lt); font-size: 14px; cursor: grab;
-      flex-shrink: 0; padding: 0 2px; user-select: none; line-height: 1;
+      color: var(--txt-mid); font-size: 16px; cursor: grab;
+      flex-shrink: 0; padding: 0 4px; user-select: none; line-height: 1;
+      opacity: 0.6;
     }
+    .layer-item:hover .layer-drag-handle { opacity: 1; }
     .layer-drag-handle:active { cursor: grabbing; }
     .layer-item.dragging { opacity: 0.4; }
     .layer-item.drag-over { border-color: var(--orange) !important; background: var(--orange-lt) !important; }
@@ -518,7 +520,8 @@
         2. 캔버스에서 드래그로 배치<br>
         3. 모서리 핸들로 크기 조절<br>
         4. 상단 원 핸들로 회전<br>
-        5. PNG 저장 (워터마크 포함)
+        5. 레이어 패널 ≡ 으로 순서 변경<br>
+        6. PNG 저장 (워터마크 포함)
       </div>
     </div>
 
@@ -989,7 +992,7 @@ function renderLayers() {
     // Drag handle
     const handle = document.createElement('span');
     handle.className = 'layer-drag-handle';
-    handle.textContent = '⠿';
+    handle.textContent = '≡';
     handle.title = '드래그로 순서 변경';
 
     // Thumbnail
